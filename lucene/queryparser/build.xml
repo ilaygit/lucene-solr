@@ -25,10 +25,20 @@
   <path id="classpath">
     <pathelement path="${queries.jar}"/>
     <pathelement path="${sandbox.jar}"/>
+    <pathelement path="${analyzers-common.jar}"/>
     <path refid="base.classpath"/>
   </path>
 
-  <target name="compile-core" depends="jar-queries,jar-sandbox,common.compile-core"/>
+  <path id="test.classpath">
+    <pathelement path="${analyzers-common.jar}"/>
+    <pathelement path="${analyzers-kuromoji.jar}"/>
+    <pathelement path="${analyzers-icu.jar}"/>
+    <path refid="test.base.classpath"/>
+  </path>
+
+  <target name="compile-core" depends="jar-queries,jar-sandbox,jar-analyzers-common,common.compile-core"/>
+  <!-- remove this once TestBBCoreParser and TestWildParser are moved out -->
+  <target name="compile-test" depends="jar-analyzers-icu,jar-analyzers-common,jar-analyzers-kuromoji,jar-queries,jar-sandbox,common.compile-core,common.compile-test"/>
 
   <target name="javadocs" depends="javadocs-queries,javadocs-sandbox,compile-core,check-javadocs-uptodate"
           unless="javadocs-uptodate-${name}">
