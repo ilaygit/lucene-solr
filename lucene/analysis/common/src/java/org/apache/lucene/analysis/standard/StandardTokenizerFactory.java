@@ -17,6 +17,7 @@
 package org.apache.lucene.analysis.standard;
 
 
+import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.util.TokenizerFactory;
 import org.apache.lucene.util.AttributeFactory;
 
@@ -32,7 +33,7 @@ import java.util.Map;
  * &lt;/fieldType&gt;</pre> 
  */
 public class StandardTokenizerFactory extends TokenizerFactory {
-  private final int maxTokenLength;
+  protected final int maxTokenLength;
   
   /** Creates a new StandardTokenizerFactory */
   public StandardTokenizerFactory(Map<String,String> args) {
@@ -44,7 +45,7 @@ public class StandardTokenizerFactory extends TokenizerFactory {
   }
 
   @Override
-  public StandardTokenizer create(AttributeFactory factory) {
+  public Tokenizer create(AttributeFactory factory) {
     StandardTokenizer tokenizer = new StandardTokenizer(factory);
     tokenizer.setMaxTokenLength(maxTokenLength);
     return tokenizer;
