@@ -48,7 +48,7 @@ public class SolrCoreParser extends CoreParser implements NamedListInitializedPl
   }
 
   @Override
-  public void init(NamedList initArgs) {
+  public void init(@SuppressWarnings("rawtypes") NamedList initArgs) {
     if (initArgs == null || initArgs.size() == 0) {
       return;
     }
@@ -59,6 +59,7 @@ public class SolrCoreParser extends CoreParser implements NamedListInitializedPl
       loader = req.getCore().getResourceLoader();
     }
 
+    @SuppressWarnings("unchecked")
     final Iterable<Map.Entry<String,Object>> args = initArgs;
     for (final Map.Entry<String,Object> entry : args) {
       final String queryName = entry.getKey();
