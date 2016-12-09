@@ -1,0 +1,7 @@
+<ivy-module version="2.0">
+  <info organisation="com.bloomberg.news" module="analysis-bbnews"/>
+  <configurations defaultconfmapping="compile->master;test->master">
+    <conf name="compile" transitive="false"/>
+    <conf name="test" transitive="false"/>
+  </configurations>
+</ivy-module>

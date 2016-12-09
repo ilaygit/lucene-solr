@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+
+<project name="solr-analysis-bbnews" default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
+
+  <description>
+    Analysis components specific to Bloomberg (News)
+  </description>
+
+  <import file="../contrib-build.xml"/>
+
+  <target name="compile-test" depends="-compile-test-lucene-analysis,common-solr.compile-test"/>
+
+  <path id="test.classpath">
+    <path refid="solr.test.base.classpath"/>
+    <dirset dir="${common.dir}/build/analysis/">
+      <include name="**/classes/java"/>
+      <include name="**/classes/test"/>
+    </dirset>
+  </path>
+
+  <target name="jflex" depends="-install-jflex,clean-jflex,
+                                -jflex-FinancialStandardTokenizer"/>
+
+  <target name="-jflex-FinancialStandardTokenizer" depends="init,-install-jflex">
+    <run-jflex dir="src/java/com/bloomberg/news/lucene/analysis/standard" name="FinancialStandardTokenizerImpl"/>
+  </target>
+
+  <macrodef name="run-jflex">
+    <attribute name="dir"/>
+    <attribute name="name"/>
+    <sequential>
+      <jflex file="@{dir}/@{name}.jflex" outdir="@{dir}" nobak="on" inputstreamctor="false"/>
+    </sequential>
+  </macrodef>
+
+  <target name="clean-jflex">
+    <delete>
+      <fileset dir="src" includes="**/*.java">
+        <containsregexp expression="generated.*by.*JFlex"/>
+      </fileset>
+    </delete>
+  </target>
+
+</project>
