@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<project name="solr-queryparser-bbnews" default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
+
+  <description>
+    Queryparser components specific to Bloomberg (News)
+  </description>
+
+  <import file="../contrib-build.xml"/>
+
+  <target name="compile-test" depends="-compile-test-lucene-queryparser,common-solr.compile-test"/>
+
+  <path id="classpath">
+    <fileset dir="lib" excludes="${common.classpath.excludes}"/>
+    <pathelement location="${analyzers-icu.jar}"/>
+    <path refid="solr.base.classpath"/>
+  </path>
+
+  <path id="test.classpath">
+    <path refid="solr.test.base.classpath"/>
+    <pathelement path="${solr-contrib.dir}/../build/contrib/solr-analysis-bbnews/classes/java"/>
+    <pathelement path="${common.dir}/build/queryparser/classes/java"/>
+    <pathelement path="${common.dir}/build/queryparser/classes/test"/>
+  </path>
+
+</project>

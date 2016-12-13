@@ -1,0 +1,11 @@
+<ivy-module version="2.0">
+  <info organisation="com.bloomberg.news" module="queryparser-bbnews"/>
+  <configurations defaultconfmapping="compile->master;test->master">
+    <conf name="compile" transitive="false"/>
+    <conf name="test" transitive="false"/>
+  </configurations>
+  <dependencies>
+    <!-- Currently needed by TestWildParser. TODO: switch to not use ICUFoldingFilter -->
+    <dependency org="com.ibm.icu" name="icu4j" rev="${/com.ibm.icu/icu4j}" conf="compile"/>
+  </dependencies>
+</ivy-module>
