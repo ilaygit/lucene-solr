@@ -68,7 +68,10 @@ public class TermsQueryBuilder implements QueryBuilder {
 
     Query q = bq.build();
     float boost = DOMUtils.getAttribute(e, "boost", 1.0f);
-    return new BoostQuery(q, boost);
+    if (boost != 1f) {
+      return new BoostQuery(q, boost);
+    }
+    return q;
   }
 
 }
