@@ -1,5 +1,5 @@
 <ivy-module version="2.0">
-  <info organisation="com.bloomberg.news" module="queryparser-bbnews"/>
+  <info organisation="com.bloomberg.news.solr" module="queryparser-bbnews"/>
   <configurations defaultconfmapping="compile->master;test->master">
     <conf name="compile" transitive="false"/>
     <conf name="test" transitive="false"/>

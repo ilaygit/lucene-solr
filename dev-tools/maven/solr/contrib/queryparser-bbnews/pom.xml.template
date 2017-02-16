@@ -26,7 +26,7 @@
     <version>@version@</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <groupId>com.bloomberg.news</groupId>
+  <groupId>com.bloomberg.news.solr</groupId>
   <artifactId>solr-queryparser-bbnews</artifactId>
   <packaging>jar</packaging>
   <name>Queryparser components specific to Bloomberg (News)</name>

@@ -26,7 +26,7 @@
     <version>@version@</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <groupId>com.bloomberg.news</groupId>
+  <groupId>com.bloomberg.news.solr</groupId>
   <artifactId>solr-analysis-bbnews</artifactId>
   <packaging>jar</packaging>
   <name>Analysis components specific to Bloomberg (News)</name>
