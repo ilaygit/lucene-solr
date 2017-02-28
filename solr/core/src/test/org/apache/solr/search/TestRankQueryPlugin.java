@@ -128,12 +128,6 @@ public class TestRankQueryPlugin extends QParserPlugin {
       this.mergeStrategy = mergeStrategy;
     }
 
-    public TopDocsCollector getTopDocsCollector(int len, QueryCommand cmd, IndexSearcher searcher) {
-      if(collector == 0)
-        return new TestCollector(null);
-      else
-        return new TestCollector1(null);
-    }
 
     public MergeStrategy getMergeStrategy() {
       if(mergeStrategy == 0)
@@ -141,6 +135,21 @@ public class TestRankQueryPlugin extends QParserPlugin {
       else
         return new TestMergeStrategy1();
     }
+
+    @Override
+    public TopDocsCollector getTopDocsCollector(int len, QueryCommand cmd, IndexSearcher searcher) throws IOException {
+      return getTopDocsCollector(null, len, cmd.getSort(), searcher);
+    }
+
+    @Override
+    public TopDocsCollector getTopDocsCollector(TopDocsCollector previousCollector, int length, Sort sort, IndexSearcher searcher)
+        throws IOException {
+      if(collector == 0)
+        return new TestCollector(null);
+      else
+        return new TestCollector1(null);
+    }
+
   }
 
   static class TestMergeStrategy implements MergeStrategy {

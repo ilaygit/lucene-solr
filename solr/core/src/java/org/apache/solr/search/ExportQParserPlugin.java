@@ -87,6 +87,15 @@ public class ExportQParserPlugin extends QParserPlugin {
     public TopDocsCollector getTopDocsCollector(int len,
                                                 QueryCommand cmd,
                                                 IndexSearcher searcher) throws IOException {
+
+      return getTopDocsCollector(null, len, cmd.getSort(), searcher);
+    }
+
+    @Override
+    public TopDocsCollector getTopDocsCollector(TopDocsCollector previousCollector,
+                                                int len,
+                                                Sort sort,
+                                                IndexSearcher searcher) throws IOException {
       int leafCount = searcher.getTopReaderContext().leaves().size();
       FixedBitSet[] sets = new FixedBitSet[leafCount];
       return new ExportCollector(sets);

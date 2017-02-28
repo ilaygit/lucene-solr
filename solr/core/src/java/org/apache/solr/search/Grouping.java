@@ -19,7 +19,9 @@ package org.apache.solr.search;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -68,6 +70,7 @@ import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.StrFieldSource;
 import org.apache.solr.search.grouping.collector.FilterCollector;
+import org.apache.solr.search.grouping.collector.RerankTermSecondPassGroupingCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -758,9 +761,18 @@ public class Grouping {
       int groupedDocsToCollect = getMax(groupOffset, docsPerGroup, maxDoc);
       groupedDocsToCollect = Math.max(groupedDocsToCollect, 1);
       Sort withinGroupSort = this.withinGroupSort != null ? this.withinGroupSort : Sort.RELEVANCE;
-      secondPass = new TermSecondPassGroupingCollector(
-          groupBy, topGroups, groupSort, withinGroupSort, groupedDocsToCollect, needScores, needScores, false
-      );
+      if (query instanceof RankQuery) {
+        secondPass = new RerankTermSecondPassGroupingCollector(
+            groupBy, topGroups, groupSort, withinGroupSort, searcher, (RankQuery)query, groupedDocsToCollect, needScores,
+            needScores, false
+            );
+      } else {
+        secondPass = new TermSecondPassGroupingCollector(
+            groupBy, topGroups, groupSort, withinGroupSort, groupedDocsToCollect, needScores,
+            needScores, false
+            );
+      }
+
 
       if (totalCount == TotalCount.grouped) {
         allGroupsCollector = new TermAllGroupsCollector(groupBy);
@@ -785,6 +797,20 @@ public class Grouping {
     @Override
     protected void finish() throws IOException {
       result = secondPass != null ? secondPass.getTopGroups(0) : null;
+      if (result != null && query instanceof RankQuery && groupSort == Sort.RELEVANCE) {
+        // if we are sorting for relevance and query is a RankQuery, it may be that
+        // the order of the groups changed, we need to reorder
+        GroupDocs[] groups = result.groups;
+        Arrays.sort(groups, new Comparator<GroupDocs>() {
+          @Override
+          public int compare(GroupDocs o1, GroupDocs o2) {
+            if (o1.maxScore > o2.maxScore) return -1;
+            if (o1.maxScore < o2.maxScore) return 1;
+            return 0;
+          }
+        });
+      }
+
       if (main) {
         mainResult = createSimpleResponse();
         return;
