@@ -407,11 +407,6 @@ public class SimpleFacets {
       // TODO: default to per-segment or not?
       method = FacetMethod.FC;
     }
-
-    if (method == FacetMethod.FCS && multiToken) {
-      // only fc knows how to deal with multi-token fields
-      method = FacetMethod.FC;
-    }
     
     if (method == FacetMethod.ENUM && sf.hasDocValues()) {
       // only fc can handle docvalues types
@@ -428,7 +423,6 @@ public class SimpleFacets {
           counts = getFacetTermEnumCounts(searcher, base, field, offset, limit, mincount,missing,sort,prefix);
           break;
         case FCS:
-          assert !multiToken;
           if (ft.getNumericType() != null && !sf.multiValued()) {
             // force numeric faceting
             if (prefix != null && !prefix.isEmpty()) {

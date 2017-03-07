@@ -1838,6 +1838,7 @@ public class SimpleFacetsTest extends SolrTestCaseJ4 {
     doFacetPrefix("t_s", null, "facet.method", "enum", "facet.enum.cache.minDf", "3");
     doFacetPrefix("t_s", null, "facet.method", "enum", "facet.enum.cache.minDf", "100");
     doFacetPrefix("t_s", null, "facet.method", "fc");
+    doFacetPrefix("t_s", null, "facet.method", "fcs");
   }
 
   static void indexFacetPrefixSingleValued() {
