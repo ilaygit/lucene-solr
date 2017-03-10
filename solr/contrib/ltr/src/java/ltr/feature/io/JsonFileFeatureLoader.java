@@ -94,7 +94,7 @@ public class JsonFileFeatureLoader {
     Float defaultValue = null;
 
     if (objDefaultValue == null){
-      logger.warn("default value for feature {}, not specified, setting to {}", name, CommonLtrParams.FEATURE_DEFAULT_VALUE);
+      logger.debug("default value for feature {}, not specified, setting to {}", name, CommonLtrParams.FEATURE_DEFAULT_VALUE);
       defaultValue = CommonLtrParams.FEATURE_DEFAULT_VALUE;
     }
     else if (objDefaultValue instanceof Float){

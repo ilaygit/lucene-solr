@@ -138,7 +138,6 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
       }
       this.reRankModel.setRequest(context.req);
       this.reRankModel.setOriginalQuery(context.query);
-      logger.info("query = {} ", context.query);
       this.featurelLogger = this.reRankModel.getFeatureLogger();
       final IndexSearcher searcher = context.searcher;
       if (searcher == null) {
@@ -179,7 +178,7 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
           PostingFeatures.DOCS_AND_FREQS,null);
       
       if (r.advance(deBasedDoc) != deBasedDoc) {
-        logger.info("cannot find doc {} = {}", docid, doc);
+        logger.warn("Cannot find doc {} = {}", docid, doc);
         doc.addField(this.name, this.featurelLogger.makeRecord(docid,
             this.featureStoreName, this.featureStoreVersion, new String[0],
             new float[0]));
