@@ -240,6 +240,16 @@ public class FacetComponent extends SearchComponent
               // set the initial limit higher to increase accuracy
               dff.initialLimit = (int)(dff.initialLimit * 1.5) + 10;
               dff.initialMincount = 0;      // TODO: we could change this to 1, but would then need more refinement for small facet result sets?
+
+              // If option FACET_DISTRIB_MCO is turned on then we will use 1 as the initial
+              // minCount (unless the user explicitly set it to something less than 1). If
+              // option FACET_DISTRIB_MCO is turned off then we will use 0 as the initial
+              // minCount regardless of what the user might have provided (prior to the
+              // addition of the FACET_DISTRIB_MCO option the default logic was to use 0).
+              // As described in issues SOLR-8559 and SOLR-8988 the use of 1 provides a
+              // significant performance boost.
+              dff.initialMincount = dff.mco ? Math.min(dff.minCount, 1) : 0;
+
             } else {
               // if limit==-1, then no need to artificially lower mincount to 0 if it's 1
               dff.initialMincount = Math.min(dff.minCount, 1);
@@ -732,7 +742,7 @@ public class FacetComponent extends SearchComponent
       fillParams(rb, rb.req.getParams(), facetOn);
     }
 
-    private void fillParams(ResponseBuilder rb, SolrParams params, String field) {
+    protected void fillParams(ResponseBuilder rb, SolrParams params, String field) {
       this.field = field;
       this.ftype = rb.req.getSchema().getFieldTypeNoEx(this.field);
       this.offset = params.getFieldInt(field, FacetParams.FACET_OFFSET, 0);
@@ -775,6 +785,7 @@ public class FacetComponent extends SearchComponent
 
     public int initialLimit;     // how many terms requested in first phase
     public int initialMincount;  // mincount param sent to each shard
+    public boolean mco;
     public boolean needRefinements;
     public ShardFacetCount[] countSorted;
 
@@ -783,6 +794,11 @@ public class FacetComponent extends SearchComponent
       // sf = rb.req.getSchema().getField(field);
       missingMax = new long[rb.shards.length];
       counted = new FixedBitSet[rb.shards.length];
+    }
+
+    protected void fillParams(ResponseBuilder rb, SolrParams params, String field) {
+      super.fillParams(rb, params, field);
+      this.mco = params.getFieldBool(field, FacetParams.FACET_DISTRIB_MCO, false);
     }
 
     void add(int shardNum, NamedList shardCounts, int numRequested) {
