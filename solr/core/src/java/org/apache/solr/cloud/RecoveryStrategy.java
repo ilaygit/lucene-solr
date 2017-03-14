@@ -133,7 +133,8 @@ public class RecoveryStrategy extends Thread implements ClosableThread {
     }
   }
   
-  private String storageNetworkUrl(String url) {
+  protected String getReplicateLeaderUrl(ZkNodeProps leaderprops) {
+    final String url = new ZkCoreNodeProps(leaderprops).getCoreUrl();
     int slashSlash = url.indexOf("//");
     if (slashSlash == -1) return url;
     int portColon = url.indexOf(":", slashSlash);
@@ -145,10 +146,12 @@ public class RecoveryStrategy extends Thread implements ClosableThread {
       Boolean replicateOverStorageNetwork)
       throws SolrServerException, IOException {
 
-    ZkCoreNodeProps leaderCNodeProps = new ZkCoreNodeProps(leaderprops);
-    String leaderUrl = leaderCNodeProps.getCoreUrl();
+    final String leaderUrl;
     if (replicateOverStorageNetwork) {
-      leaderUrl = storageNetworkUrl(leaderCNodeProps.getCoreUrl());
+      leaderUrl = getReplicateLeaderUrl(leaderprops);
+    } else {
+      ZkCoreNodeProps leaderCNodeProps = new ZkCoreNodeProps(leaderprops);
+      leaderUrl = leaderCNodeProps.getCoreUrl();
     }
     log.info("Attempting to replicate from " + leaderUrl + ". core=" + coreName);
     
@@ -166,7 +169,7 @@ public class RecoveryStrategy extends Thread implements ClosableThread {
       throw new SolrException(ErrorCode.SERVICE_UNAVAILABLE,
           "Skipping recovery, no " + REPLICATION_HANDLER + " handler found");
     }
-
+    
     ModifiableSolrParams solrParams = new ModifiableSolrParams();
     solrParams.set(ReplicationHandler.MASTER_URL, leaderUrl);
     
