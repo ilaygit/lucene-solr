@@ -303,15 +303,28 @@ public class TestDistributedGrouping extends BaseDistributedSearchTestCase {
     
     //Debug
     simpleQuery("q", "*:*", "rows", 10, "fl", "id," + i1, "group", "true", "group.field", i1, "debug", "true");
+
+    // SOLR-8776
+    rsp = query("q", "{!func}id", "rows", 100, "fl",  "id," + i1, "group", "true",
+        "group.field", i1, "group.limit", 1, "rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
+            + ReRankQParserPlugin.RERANK_DOCS + "=1000}", "rqq", "{!func }field("+i1+")");
+
+    nl = (NamedList<?>) rsp.getResponse().get("grouped");
+    nl = (NamedList<?>) nl.get(i1);
+    nl = ((List<NamedList<?>>) nl.get("groups")).get(0);
+    int groupValue = (int)nl.get("groupValue");
+    int maxScore   = ((SolrDocumentList)nl.get("doclist")).getMaxScore().intValue();
+    assertEquals(groupValue, maxScore);
+
   }
 
-  private void simpleQuery(Object... queryParams) throws SolrServerException, IOException {
+  private QueryResponse simpleQuery(Object... queryParams) throws SolrServerException, IOException {
     ModifiableSolrParams params = new ModifiableSolrParams();
     for (int i = 0; i < queryParams.length; i += 2) {
       params.add(queryParams[i].toString(), queryParams[i + 1].toString());
     }
     params.set("shards", shards);
-    queryServer(params);
+    return queryServer(params);
   }
 
 }
