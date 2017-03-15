@@ -27,6 +27,7 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.search.ReRankQParserPlugin;
 import org.junit.Test;
 
 /**
