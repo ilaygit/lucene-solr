@@ -22,9 +22,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import org.apache.lucene.index.AtomicReaderContext;
-import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.SortedDocValues;
-import org.apache.lucene.index.SortedSetDocValues;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.DocIdSetIterator;
@@ -42,13 +40,12 @@ import org.apache.solr.schema.FieldType;
 import org.apache.solr.search.DocSet;
 import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.util.BoundedTreeSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-
+/**
+ * @deprecated Use {@link PerSegmentFaceting} instead.
+ */
+@Deprecated
 class PerSegmentSingleValuedFaceting {
-
-  private static Logger log = LoggerFactory.getLogger(PerSegmentSingleValuedFaceting.class);
 
   // input params
   SolrIndexSearcher searcher;
@@ -97,15 +94,8 @@ class PerSegmentSingleValuedFaceting {
 
     int threads = nThreads <= 0 ? Integer.MAX_VALUE : nThreads;
 
-    int numValidLeaves = 0;
-    for (final AtomicReaderContext leaf : leaves) {
-      final SegFacet segFacet = newSegFacet(leaf);
-
-      if (segFacet == null) {
-        continue;
-      }
-
-      ++numValidLeaves;
+    for (final AtomicReaderContext leave : leaves) {
+      final SegFacet segFacet = new SegFacet(leave);
 
       Callable<SegFacet> task = new Callable<SegFacet>() {
         @Override
@@ -129,18 +119,18 @@ class PerSegmentSingleValuedFaceting {
     PriorityQueue<SegFacet> queue = new PriorityQueue<SegFacet>(leaves.size()) {
       @Override
       protected boolean lessThan(SegFacet a, SegFacet b) {
-        return a.tempBR().compareTo(b.tempBR()) < 0;
+        return a.tempBR.compareTo(b.tempBR) < 0;
       }
     };
 
 
     boolean hasMissingCount=false;
     int missingCount=0;
-    for (int i=0; i<numValidLeaves; i++) {
+    for (int i=0, c=leaves.size(); i<c; i++) {
       SegFacet seg = null;
 
       try {
-        Future<SegFacet> future = completionService.take();
+        Future<SegFacet> future = completionService.take();        
         seg = future.get();
         if (!pending.isEmpty()) {
           completionService.submit(pending.removeFirst());
@@ -157,22 +147,19 @@ class PerSegmentSingleValuedFaceting {
         }
       }
 
-      if (seg.counts() == null) {
-        continue;
-      }
 
-      if (seg.startTermIndex() < seg.endTermIndex()) {
-        if (seg.startTermIndex()==-1) {
+      if (seg.startTermIndex < seg.endTermIndex) {
+        if (seg.startTermIndex==-1) {
           hasMissingCount=true;
-          missingCount += seg.counts()[0];
-          seg.setPos(0);
+          missingCount += seg.counts[0];
+          seg.pos = 0;
         } else {
-          seg.setPos(seg.startTermIndex());
+          seg.pos = seg.startTermIndex;
         }
-        if (seg.pos() < seg.endTermIndex()) {
-          seg.initTermsEnum();
-          seg.termsEnum().seekExact(seg.pos());
-          seg.setTempBR(seg.termsEnum().term());
+        if (seg.pos < seg.endTermIndex) {
+          seg.tenum = seg.si.termsEnum();
+          seg.tenum.seekExact(seg.pos);
+          seg.tempBR = seg.tenum.term();
           queue.add(seg);
         }
       }
@@ -198,24 +185,16 @@ class PerSegmentSingleValuedFaceting {
       int count = 0;
 
       do {
-        count += seg.counts[seg.pos - seg.startTermIndex()];
+        count += seg.counts[seg.pos - seg.startTermIndex];
 
+        // TODO: OPTIMIZATION...
         // if mincount>0 then seg.pos++ can skip ahead to the next non-zero entry.
-        do{
-          ++seg.pos;
-        }
-        while(
-                (seg.pos < seg.endTermIndex())  //stop incrementing before we run off the end
-                        && (seg.termsEnum().next() != null || true) //move term enum forward with position -- dont care about value
-                        && (mincount > 0) //only skip ahead if mincount > 0
-                        && (seg.counts[seg.pos - seg.startTermIndex()] == 0) //check zero count
-                );
-
-        if (seg.pos >= seg.endTermIndex()) {
+        seg.pos++;
+        if (seg.pos >= seg.endTermIndex) {
           queue.pop();
           seg = queue.top();
         }  else {
-          seg.tempBR = seg.termsEnum().term();
+          seg.tempBR = seg.tenum.next();
           seg = queue.updateTop();
         }
       } while (seg != null && val.compareTo(seg.tempBR) == 0);
@@ -226,7 +205,7 @@ class PerSegmentSingleValuedFaceting {
 
     NamedList<Integer> res = collector.getFacetCounts();
 
-    // convert labels to readable form
+    // convert labels to readable form    
     FieldType ft = searcher.getSchema().getFieldType(fieldName);
     int sz = res.size();
     for (int i=0; i<sz; i++) {
@@ -243,12 +222,15 @@ class PerSegmentSingleValuedFaceting {
     return res;
   }
 
-  abstract class SegFacet {
+  class SegFacet {
     AtomicReaderContext context;
     SegFacet(AtomicReaderContext context) {
       this.context = context;
     }
-
+    
+    SortedDocValues si;
+    int startTermIndex;
+    int endTermIndex;
     int[] counts;
 
     int pos; // only used when merging
@@ -256,46 +238,9 @@ class PerSegmentSingleValuedFaceting {
 
     BytesRef tempBR = new BytesRef();
 
-    abstract protected void countTerms() throws IOException;
-
-    protected AtomicReaderContext context() {
-      return context;
-    }
-    protected int[] counts() {
-      return counts;
-    }
-    protected TermsEnum termsEnum() { return tenum; }
-    protected int pos() { return pos; }
-    protected BytesRef tempBR() {
-      return tempBR;
-    }
-
-    protected void setCounts(int[] counts) {
-      this.counts = counts;
-    }
-    protected void setPos(int pos) { this.pos = pos; }
-    protected void setTermsEnum(TermsEnum tenum) { this.tenum = tenum; }
-    protected void setTempBR(BytesRef tempBR) { this.tempBR = tempBR; }
-
-    abstract protected int startTermIndex();
-    abstract protected int endTermIndex();
-    abstract protected void initTermsEnum();
-  }
-
-  private class SortedDocValuesSegFacet extends SegFacet {
-    final private SortedDocValues si;
-    private int startTermIndex;
-    private int endTermIndex;
-
-    SortedDocValuesSegFacet(AtomicReaderContext context) throws IOException {
-      super(context);
-      si = FieldCache.DEFAULT.getTermsIndex(context().reader(), fieldName);
-      initStartAndEndTermIndex();
-    }
-
-    private void initStartAndEndTermIndex() {
-      int startTermIndex;
-      int endTermIndex;
+    void countTerms() throws IOException {
+      si = FieldCache.DEFAULT.getTermsIndex(context.reader(), fieldName);
+      // SolrCore.log.info("reader= " + reader + "  FC=" + System.identityHashCode(si));
 
       if (prefix!=null) {
         BytesRef prefixRef = new BytesRef(prefix);
@@ -311,28 +256,12 @@ class PerSegmentSingleValuedFaceting {
         endTermIndex=si.getValueCount();
       }
 
-      this.startTermIndex = startTermIndex;
-      this.endTermIndex = endTermIndex;
-    }
-
-    @Override
-    protected int startTermIndex() {
-      return startTermIndex;
-    }
-
-    @Override
-    protected int endTermIndex() {
-      return endTermIndex;
-    }
-
-    @Override
-    protected void countTerms() throws IOException {
       final int nTerms=endTermIndex-startTermIndex;
       if (nTerms>0) {
         // count collection array only needs to be as big as the number of terms we are
         // going to collect counts for.
-        final int[] counts = new int[nTerms];
-        DocIdSet idSet = baseSet.getDocIdSet(context(), null);  // this set only includes live docs
+        final int[] counts = this.counts = new int[nTerms];
+        DocIdSet idSet = baseSet.getDocIdSet(context, null);  // this set only includes live docs
         DocIdSetIterator iter = idSet.iterator();
 
 
@@ -352,121 +281,10 @@ class PerSegmentSingleValuedFaceting {
             if (arrIdx>=0 && arrIdx<nTerms) counts[arrIdx]++;
           }
         }
-
-        setCounts(counts);
       }
-    }
-
-    @Override
-    protected void initTermsEnum() {
-      setTermsEnum(si.termsEnum());
     }
   }
 
-  private class SortedSetDocValuesSegFacet extends SegFacet {
-    final private SortedSetDocValues si;
-    private int startTermIndex;
-    private int endTermIndex;
-
-    SortedSetDocValuesSegFacet(AtomicReaderContext context) throws IOException {
-      super(context);
-      si = FieldCache.DEFAULT.getDocTermOrds(context().reader(), fieldName);
-      initStartAndEndTermIndex();
-    }
-
-    private void initStartAndEndTermIndex() {
-      long startTermIndex;
-      long endTermIndex;
-
-      if (prefix!=null) {
-        BytesRef prefixRef = new BytesRef(prefix);
-        startTermIndex = si.lookupTerm(prefixRef);
-        if (startTermIndex<0) startTermIndex=-startTermIndex-1;
-        prefixRef.append(UnicodeUtil.BIG_TERM);
-        // TODO: we could constrain the lower endpoint if we had a binarySearch method that allowed passing start/end
-        endTermIndex = si.lookupTerm(prefixRef);
-        assert endTermIndex < 0;
-        endTermIndex = -endTermIndex-1;
-      } else {
-        startTermIndex=-1;
-        endTermIndex=si.getValueCount();
-      }
-
-      if (startTermIndex < Integer.MIN_VALUE || endTermIndex < Integer.MIN_VALUE
-              || startTermIndex > Integer.MAX_VALUE || endTermIndex > Integer.MAX_VALUE) {
-        throw new SolrException(SolrException.ErrorCode.SERVER_ERROR, "Invalid start=" + startTermIndex + " end=" + endTermIndex + " term indices");
-      }
-
-      this.startTermIndex = (int) startTermIndex;
-      this.endTermIndex = (int) endTermIndex;
-    }
-
-    @Override
-    protected int startTermIndex() {
-      return startTermIndex;
-    }
-
-    @Override
-    protected int endTermIndex() {
-      return endTermIndex;
-    }
-
-    @Override
-    protected void countTerms() throws IOException {
-      final int nTerms = endTermIndex - startTermIndex;
-      if (nTerms>0) {
-        // count collection array only needs to be as big as the number of terms we are
-        // going to collect counts for.
-        final int[] counts = new int[nTerms];
-        DocIdSet idSet = baseSet.getDocIdSet(context(), null);  // this set only includes live docs
-        DocIdSetIterator iter = idSet.iterator();
-
-        int doc;
-
-        // specialized version when collecting counts for all terms
-        while ((doc = iter.nextDoc()) < DocIdSetIterator.NO_MORE_DOCS) {
-          si.setDocument(doc);
-
-          long ord;
-          while ((ord = si.nextOrd()) != SortedSetDocValues.NO_MORE_ORDS) {
-            assert(ord > Integer.MIN_VALUE && ord < Integer.MAX_VALUE);
-            counts[(int) (1 + ord)]++;
-          }
-        }
-        setCounts(counts);
-      }
-    }
-
-    @Override
-    protected void initTermsEnum() {
-      setTermsEnum(si.termsEnum());
-    }
-  }
-
-  private SegFacet newSegFacet(AtomicReaderContext atomicReaderContext) throws IOException {
-    final FieldInfo fieldInfo = atomicReaderContext.reader().getFieldInfos().fieldInfo(fieldName);
-
-    if (fieldInfo == null) {
-      log.error("Cannot get field={}", fieldName);
-      return null;
-    }
-
-    if (!fieldInfo.hasDocValues()) {
-      log.error("Cannot facet on field={} with no docvalues", fieldName);
-      return null;
-    }
-
-    final FieldInfo.DocValuesType docValuesType = fieldInfo.getDocValuesType();
-    switch(docValuesType) {
-      case SORTED:
-        return new SortedDocValuesSegFacet(atomicReaderContext);
-      case SORTED_SET:
-        return new SortedSetDocValuesSegFacet(atomicReaderContext);
-      default:
-        log.error("Cannot facet on field={} with unsupported docvalues type={}", fieldName, docValuesType);
-        return null;
-    }
-  }
 }
 
 

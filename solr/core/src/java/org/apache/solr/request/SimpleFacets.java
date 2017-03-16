@@ -430,7 +430,7 @@ public class SimpleFacets {
             }
             counts = NumericFacets.getCounts(searcher, base, field, offset, limit, mincount, missing, sort);
           } else {
-            PerSegmentSingleValuedFaceting ps = new PerSegmentSingleValuedFaceting(searcher, base, field, offset,limit, mincount, missing, sort, prefix);
+            PerSegmentFaceting ps = new PerSegmentFaceting(searcher, base, field, offset,limit, mincount, missing, sort, prefix);
             Executor executor = threads == 0 ? directExecutor : facetExecutor;
             ps.setNumThreads(threads);
             counts = ps.getFacetCounts(executor);
