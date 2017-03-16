@@ -725,5 +725,13 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
         "//arr/lst[2]/result/doc/float[@name='id'][.='3.0']",
         "//arr/lst[3]/result/doc/float[@name='id'][.='2.0']"
     );
+    // test grouping by function
+    params.remove("group.field");
+    params.add("group.func", "log(test_tf)");
+    assertQ(req(params), "*[count(//doc)=2]",
+        "//arr/lst[1]/result/doc/float[@name='id'][.='1.0']", // should be 3.0
+        "//arr/lst[2]/result/doc/float[@name='id'][.='2.0']"  // should be 4.0
+    );
+
   }
 }
