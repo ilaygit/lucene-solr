@@ -122,8 +122,9 @@ public class SolrDispatchFilter extends BaseSolrFilter {
   protected String pathPrefix = null; // strip this from the beginning of a path
   protected String abortErrorMessage = null;
   protected final HttpClient httpClient = HttpClientUtil.createClient(new ModifiableSolrParams());
-  
+
   private static final Charset UTF8 = StandardCharsets.UTF_8;
+  private static final int DOC_TRANSFORMER_MAX_TIME = 5;
 
   public SolrDispatchFilter() {
   }
@@ -777,14 +778,17 @@ public class SolrDispatchFilter extends BaseSolrFilter {
       throw e;
     }
 
-    if (log.isInfoEnabled() && solrReq.getRequestTimer().hasTimer("transformer")){
+    if (log.isWarnEnabled() && solrReq.getRequestTimer().hasTimer("transformer")){
       final RTimer timer = solrReq.getRequestTimer().sub("transformer");
       final ReturnFields rf = solrRsp.getReturnFields();
       final DocTransformer dt = rf.getTransformer();
       final long transformersTime = (long)timer.getTime();
-      solrRsp.getToLog().add("TransformerName", dt.getName());
-      solrRsp.getToLog().add("TransformerTime", transformersTime);
-      log.info(solrRsp.getToLogAsString(solrReq.getCore().getLogId()));
+
+      if (transformersTime >= DOC_TRANSFORMER_MAX_TIME){
+        solrRsp.getToLog().add("TransformerName", dt.getName());
+        solrRsp.getToLog().add("TransformerTime", transformersTime);
+        log.warn("{}: TransformerTime actual={} > max={}", solrReq.getCore().getLogId(), transformersTime, DOC_TRANSFORMER_MAX_TIME);
+      }
     }
   }
 
