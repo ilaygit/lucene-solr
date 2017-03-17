@@ -69,8 +69,7 @@ import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.StrFieldSource;
-import org.apache.solr.search.grouping.collector.FilterCollector;
-import org.apache.solr.search.grouping.collector.RerankTermSecondPassGroupingCollector;
+import org.apache.solr.search.grouping.collector.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1005,9 +1004,13 @@ public class Grouping {
       int groupdDocsToCollect = getMax(groupOffset, docsPerGroup, maxDoc);
       groupdDocsToCollect = Math.max(groupdDocsToCollect, 1);
       Sort withinGroupSort = this.withinGroupSort != null ? this.withinGroupSort : Sort.RELEVANCE;
-      secondPass = new FunctionSecondPassGroupingCollector(
-          topGroups, groupSort, withinGroupSort, groupdDocsToCollect, needScores, needScores, false, groupBy, context
-      );
+      if (query instanceof RankQuery){
+        secondPass = new RerankFunctionSecondPassGroupingCollector(topGroups, groupSort, withinGroupSort, (RankQuery)query, searcher, groupdDocsToCollect, needScores, needScores, false, groupBy, context);
+      } else {
+        secondPass = new FunctionSecondPassGroupingCollector(
+            topGroups, groupSort, withinGroupSort, groupdDocsToCollect, needScores, needScores, false, groupBy, context
+        );
+      }
 
       if (totalCount == TotalCount.grouped) {
         allGroupsCollector = new FunctionAllGroupsCollector(groupBy, context);
@@ -1029,6 +1032,21 @@ public class Grouping {
     @Override
     protected void finish() throws IOException {
       result = secondPass != null ? secondPass.getTopGroups(0) : null;
+
+      if (result != null && query instanceof RankQuery && groupSort == Sort.RELEVANCE) {
+        // if we are sorting for relevance and query is a RankQuery, it may be that
+        // the order of the groups changed, we need to reorder
+        GroupDocs[] groups = result.groups;
+        Arrays.sort(groups, new Comparator<GroupDocs>() {
+          @Override
+          public int compare(GroupDocs o1, GroupDocs o2) {
+            if (o1.maxScore > o2.maxScore) return -1;
+            if (o1.maxScore < o2.maxScore) return 1;
+            return 0;
+          }
+        });
+      }
+
       if (main) {
         mainResult = createSimpleResponse();
         return;

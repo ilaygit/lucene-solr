@@ -21,6 +21,7 @@ import org.apache.solr.common.SolrException;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrInfoMBean;
+import org.apache.solr.request.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -725,12 +726,35 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
         "//arr/lst[2]/result/doc/float[@name='id'][.='3.0']",
         "//arr/lst[3]/result/doc/float[@name='id'][.='2.0']"
     );
-    // test grouping by function
-    params.remove("group.field");
+    // test grouping by function:
+    // documents are
+    // 1. firstly scored by their test_tl score and then
+    // 2. then grouped by the value of log(test_tf)
+    // 3. finally reranked by test_ti
+    // rerank query will add the score so:
+
+    // 1. first pass (doc_id, score):    results = (1, 9)(2, 8) (3, 2) (4, 3) (5, 1)
+    // 2. grouping:                      group1(max score=9) = [(1, 9) (3, 2)],  group2(max score = 8) = [(2, 8) (4, 3) (5, 1)]
+    // 3. reranking (scoring):           group1 = [ (1, 9 + 5), (3, 2 + 100) ]  group2 [ (2, 8 + 50), (4, 3 + 74), (5, 1 + 1000)]
+    //      reordered:                   group2(max score = 1001) [ (5, 1001) (4, 77) (2, 58)) group1(max score = 102) = [ (3, 102) (1, 14)  ]
+    // (actual scores will be offset by 1.0 because of a constant boost (=1) added to the scores)
+
+    params = new ModifiableSolrParams();
+    params.add("q", "{!edismax bq=$bqq1}*:*");
+    params.add("bqq1", "{!func }field(test_tl)");
+    params.add("start", "0");
+    params.add("rows", "6");
+    params.add("fl", "id,score,[explain]");
+    params.add("group", "true");
     params.add("group.func", "log(test_tf)");
+    params.add("rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
+        + ReRankQParserPlugin.RERANK_DOCS + "=200 "+ ReRankQParserPlugin.RERANK_WEIGHT + "=1 }");
+    //rank query, rerank documents on the value of test_ti
+    params.add("rqq", "{!func }field(test_ti)");
+
     assertQ(req(params), "*[count(//doc)=2]",
-        "//arr/lst[1]/result/doc/float[@name='id'][.='1.0']", // should be 3.0
-        "//arr/lst[2]/result/doc/float[@name='id'][.='2.0']"  // should be 4.0
+        "//arr/lst[1]/result/doc/float[@name='id'][.='5.0']", // should be 3.0
+        "//arr/lst[2]/result/doc/float[@name='id'][.='3.0']"  // should be 4.0
     );
 
   }
