@@ -447,7 +447,7 @@ class PerSegmentFaceting {
     final FieldInfo fieldInfo = atomicReaderContext.reader().getFieldInfos().fieldInfo(fieldName);
 
     if (fieldInfo == null) {
-      log.error("Cannot get field={}", fieldName);
+      log.debug("Cannot get field={}", fieldName);
       return null;
     }
 
