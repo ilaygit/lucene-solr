@@ -116,6 +116,8 @@ public interface FacetParams {
 
   public static final String FACET_DISTRIB_MCO = FACET_DISTRIB + ".mco";
 
+  public static final String FACET_DISTRIB_REFINE_TERMS_OUTSIDE_LIMIT = FACET_DISTRIB + ".refineTermsOutsideLimit";
+
     /**
    * Comma separated list of fields to pivot
    * 

@@ -457,7 +457,7 @@ public class FacetComponent extends SearchComponent
           // automatically flag the top values for refinement
           // this should always be true for facet.sort=index
           needRefinement = true;
-        } else {
+        } else if (dff.refineTermsOutsideLimit) {
           // this logic should only be invoked for facet.sort=index (for now)
 
           // calculate the maximum value that this term may have
@@ -787,6 +787,7 @@ public class FacetComponent extends SearchComponent
     public int initialMincount;  // mincount param sent to each shard
     public boolean mco;
     public boolean needRefinements;
+    private boolean refineTermsOutsideLimit;
     public ShardFacetCount[] countSorted;
 
     DistribFieldFacet(ResponseBuilder rb, String facetStr) {
@@ -799,6 +800,7 @@ public class FacetComponent extends SearchComponent
     protected void fillParams(ResponseBuilder rb, SolrParams params, String field) {
       super.fillParams(rb, params, field);
       this.mco = params.getFieldBool(field, FacetParams.FACET_DISTRIB_MCO, false);
+      this.refineTermsOutsideLimit = params.getFieldBool(field, FacetParams.FACET_DISTRIB_REFINE_TERMS_OUTSIDE_LIMIT, true);
     }
 
     void add(int shardNum, NamedList shardCounts, int numRequested) {
