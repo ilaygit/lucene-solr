@@ -26,6 +26,7 @@ import org.apache.lucene.queries.function.ValueSource;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocsCollector;
+import org.apache.lucene.search.grouping.GroupDocs;
 import org.apache.lucene.search.grouping.SearchGroup;
 import org.apache.lucene.search.grouping.TopGroups;
 import org.apache.lucene.search.grouping.function.FunctionSecondPassGroupingCollector;
@@ -34,8 +35,7 @@ import org.apache.solr.search.RankQuery;
 
 public class RerankFunctionSecondPassGroupingCollector extends FunctionSecondPassGroupingCollector {
 
-
-  private static final int DEFAULT_GROUPING_RERANKING = 10;
+  private static final int DEFAULT_GROUPING_RERANKING = 1000;
 
   /**
    * Constructs a {@link RerankFunctionSecondPassGroupingCollector} instance.

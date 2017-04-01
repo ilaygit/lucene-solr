@@ -329,7 +329,6 @@ public abstract class BaseDistributedSearchTestCase extends SolrTestCaseJ4 {
 
     shardsArr = new String[numShards];
     StringBuilder sb = new StringBuilder();
-
     for (int i = 0; i < numShards; i++) {
       if (sb.length() > 0) sb.append(',');
       final String shardname = "shard" + i;

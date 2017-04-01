@@ -310,12 +310,10 @@ public class TestDistributedGrouping extends BaseDistributedSearchTestCase {
         "group.field", i1, "group.limit", 1, "rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
             + ReRankQParserPlugin.RERANK_DOCS + "=1000}", "rqq", "{!func }field("+i1+")");
 
-    nl = (NamedList<?>) rsp.getResponse().get("grouped");
-    nl = (NamedList<?>) nl.get(i1);
-    nl = ((List<NamedList<?>>) nl.get("groups")).get(0);
-    int groupValue = (int)nl.get("groupValue");
-    int maxScore   = ((SolrDocumentList)nl.get("doclist")).getMaxScore().intValue();
-    assertEquals(groupValue, maxScore);
+
+    rsp = query("q", "{!func}id", "rows", 100, "fl",  "id," + i1, "group", "true",
+        "group.field", i1, "group.limit", 1, "rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
+            + ReRankQParserPlugin.RERANK_DOCS + "=1000}", "rqq", t1+":eggs");
 
   }
 

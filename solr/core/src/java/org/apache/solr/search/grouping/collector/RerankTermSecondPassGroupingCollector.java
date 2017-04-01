@@ -18,12 +18,17 @@ package org.apache.solr.search.grouping.collector;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocsCollector;
+import org.apache.lucene.search.grouping.GroupDocs;
 import org.apache.lucene.search.grouping.SearchGroup;
+import org.apache.lucene.search.grouping.TopGroups;
 import org.apache.lucene.search.grouping.term.TermSecondPassGroupingCollector;
 import org.apache.lucene.util.BytesRef;
 import org.apache.solr.search.RankQuery;
@@ -33,7 +38,7 @@ import org.slf4j.LoggerFactory;
 public class RerankTermSecondPassGroupingCollector extends TermSecondPassGroupingCollector {
 
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final int DEFAULT_GROUPING_RERANKING = 10;
+  private static final int DEFAULT_GROUPING_RERANKING = 1000;
 
 
   public RerankTermSecondPassGroupingCollector(String groupField, Collection<SearchGroup<BytesRef>> groups,

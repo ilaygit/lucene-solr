@@ -753,8 +753,10 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     params.add("rqq", "{!func }field(test_ti)");
 
     assertQ(req(params), "*[count(//doc)=2]",
-        "//arr/lst[1]/result/doc/float[@name='id'][.='5.0']", // should be 3.0
-        "//arr/lst[2]/result/doc/float[@name='id'][.='3.0']"  // should be 4.0
+        "//arr/lst[1]/result/doc/float[@name='id'][.='5.0']",
+        "//arr/lst[2]/result/doc/float[@name='id'][.='3.0']",
+        "//arr/lst[1]/result[@maxScore=1002.0]",
+        "//arr/lst[2]/result[@maxScore=103.0]"
     );
 
   }

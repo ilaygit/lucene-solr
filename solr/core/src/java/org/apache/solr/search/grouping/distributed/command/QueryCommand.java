@@ -109,21 +109,29 @@ public class QueryCommand implements Command<QueryCommandResult> {
   private final int docsToCollect;
   private final boolean needScores;
   private final String queryString;
+  private final IndexSearcher searcher;
 
   private TopDocsCollector collector;
   private FilterCollector filterCollector;
 
   private QueryCommand(Sort sort, Query query, int docsToCollect, boolean needScores, DocSet docSet, String queryString) {
+        this(sort, query, docsToCollect, needScores, docSet, queryString, null);
+  }
+
+
+  private QueryCommand(Sort sort, Query query, int docsToCollect, boolean needScores, DocSet docSet, String queryString, IndexSearcher searcher) {
     this.sort = sort;
     this.query = query;
     this.docsToCollect = docsToCollect;
     this.needScores = needScores;
     this.docSet = docSet;
     this.queryString = queryString;
+    this.searcher = searcher;
   }
 
   @Override
   public List<Collector> create() throws IOException {
+
     if (sort == null || sort.equals(Sort.RELEVANCE)) {
       collector = TopScoreDocCollector.create(docsToCollect);
     } else {

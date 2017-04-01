@@ -1471,13 +1471,13 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
   private TopDocsCollector buildTopDocsCollector(int len, QueryCommand cmd) throws IOException {
 
     Query q = cmd.getQuery();
-    if (q instanceof RankQuery) {
-      RankQuery rq = (RankQuery) q;
-      return rq.getTopDocsCollector(TopScoreDocCollector.create(len), len, cmd.getSort(), this);
-    }
 
     if (null == cmd.getSort()) {
       assert null == cmd.getCursorMark() : "have cursor but no sort";
+      if (q instanceof RankQuery) {
+        RankQuery rq = (RankQuery) q;
+        return rq.getTopDocsCollector(TopScoreDocCollector.create(len), len, cmd.getSort(), this);
+      }
       return TopScoreDocCollector.create(len);
     } else {
       // we have a sort
@@ -1489,6 +1489,10 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
       // ... see comments in populateNextCursorMarkFromTopDocs for cache issues (SOLR-5595)
       final boolean fillFields = (null != cursor);
       final FieldDoc searchAfter = (null != cursor ? cursor.getSearchAfterFieldDoc() : null);
+      if (q instanceof RankQuery) {
+        RankQuery rq = (RankQuery) q;
+        return rq.getTopDocsCollector(TopFieldCollector.create(weightedSort, len, searchAfter, fillFields, needScores, needScores), len, cmd.getSort(), this);
+      }
       return TopFieldCollector.create(weightedSort, len, searchAfter, fillFields, needScores, needScores);
     }
   }

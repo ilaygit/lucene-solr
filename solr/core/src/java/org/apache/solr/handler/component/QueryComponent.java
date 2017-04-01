@@ -427,6 +427,10 @@ public class QueryComponent extends SearchComponent
           rb.setResult(result);
           return;
         } else if (params.getBool(GroupParams.GROUP_DISTRIBUTED_SECOND, false)) {
+          RankQuery rq = rb.getRankQuery();
+          if (rq != null){
+            rq = rq.wrap(rb.getQuery());
+          }
           CommandHandler.Builder secondPhaseBuilder = new CommandHandler.Builder()
               .setQueryCommand(cmd)
               .setTruncateGroups(groupingSpec.isTruncateGroups() && groupingSpec.getFields().length > 0)
@@ -462,6 +466,8 @@ public class QueryComponent extends SearchComponent
                     .setMaxDocPerGroup(docsToCollect)
                     .setNeedScores(needScores)
                     .setNeedMaxScore(needScores)
+                    .setQuery(rq)
+                    .setSearcher(searcher)
                     .build()
             );
           }
@@ -853,8 +859,8 @@ public class QueryComponent extends SearchComponent
   }
 
   protected void createDistributedStats(ResponseBuilder rb) {
-    StatsCache cache = rb.req.getCore().getStatsCache();
     if ( (rb.getFieldFlags() & SolrIndexSearcher.GET_SCORES)!=0 || rb.getSortSpec().includesScore()) {
+      StatsCache cache = rb.req.getCore().getStatsCache();
       ShardRequest sreq = cache.retrieveStatsRequest(rb);
       if (sreq != null) {
         rb.addRequest(this, sreq);
