@@ -204,7 +204,7 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
   }
 
   @Override
-  public Sort getSortWithinGroup() {
+  public Sort getWithinGroupSort() {
     return sortWithinGroup;
   }
 }
