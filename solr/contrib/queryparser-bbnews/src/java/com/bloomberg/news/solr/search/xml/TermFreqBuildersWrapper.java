@@ -6,6 +6,8 @@ import org.apache.lucene.queryparser.xml.FilterBuilder;
 import org.apache.lucene.queryparser.xml.ParserException;
 import org.apache.lucene.queryparser.xml.QueryBuilder;
 import org.apache.lucene.search.Query;
+import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.search.SolrQueryBuilder;
 import org.w3c.dom.Element;
 
 /*
@@ -28,7 +30,7 @@ import org.w3c.dom.Element;
 /**
  * Utility class to facilitate configuration of Term[s][Freq](Query|Filter) builders.
  */
-public class TermFreqBuildersWrapper implements QueryBuilder {
+public class TermFreqBuildersWrapper extends SolrQueryBuilder {
 
   static QueryBuilder newTermQueryBuilder(String defaultField, Analyzer analyzer,
     QueryBuilder queryFactory) {
@@ -51,7 +53,8 @@ public class TermFreqBuildersWrapper implements QueryBuilder {
   }
 
   public TermFreqBuildersWrapper(String defaultField, Analyzer analyzer,
-    QueryBuilder queryFactory) {
+    SolrQueryRequest req, QueryBuilder queryFactory) {
+    super(defaultField, analyzer, req, queryFactory);
 
     final CoreParser coreParser = (CoreParser)queryFactory;
 
