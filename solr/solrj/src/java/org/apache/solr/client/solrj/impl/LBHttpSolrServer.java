@@ -21,7 +21,9 @@ import org.apache.solr.client.solrj.*;
 import org.apache.solr.client.solrj.request.IsUpdateRequest;
 import org.apache.solr.client.solrj.request.RequestWriter;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
+import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SolrjNamedThreadFactory;
 import org.apache.solr.common.SolrException;
@@ -285,7 +287,13 @@ public class LBHttpSolrServer extends SolrServer {
     boolean isUpdate = req.request instanceof IsUpdateRequest;
     List<ServerWrapper> skipped = null;
 
+    long timeAllowedNano = getTimeAllowedInNanos(req.getRequest());
+    long timeOutTime = System.nanoTime() + timeAllowedNano;
     for (String serverStr : req.getServers()) {
+      if(isTimeExceeded(timeAllowedNano, timeOutTime)) {
+        break;
+      }
+
       serverStr = normalize(serverStr);
       // if the server is currently a zombie, just skip to the next one
       ServerWrapper wrapper = zombieServers.get(serverStr);
@@ -315,6 +323,10 @@ public class LBHttpSolrServer extends SolrServer {
     // try the servers we previously skipped
     if (skipped != null) {
       for (ServerWrapper wrapper : skipped) {
+        if(isTimeExceeded(timeAllowedNano, timeOutTime)) {
+          break;
+        }
+
         ex = doRequest(wrapper.solrServer, req, rsp, isUpdate, true, wrapper.getKey());
         if (ex == null) {
           return rsp; // SUCCESS
@@ -479,7 +491,13 @@ public class LBHttpSolrServer extends SolrServer {
     int maxTries = serverList.length;
     Map<String,ServerWrapper> justFailed = null;
 
+    long timeAllowedNano = getTimeAllowedInNanos(request);
+    long timeOutTime = System.nanoTime() + timeAllowedNano;
     for (int attempts=0; attempts<maxTries; attempts++) {
+      if(isTimeExceeded(timeAllowedNano, timeOutTime)) {
+        break;
+      }
+
       int count = counter.incrementAndGet();      
       ServerWrapper wrapper = serverList[count % serverList.length];
       wrapper.lastUsed = System.currentTimeMillis();
@@ -506,6 +524,10 @@ public class LBHttpSolrServer extends SolrServer {
 
     // try other standard servers that we didn't try just now
     for (ServerWrapper wrapper : zombieServers.values()) {
+      if(isTimeExceeded(timeAllowedNano, timeOutTime)) {
+        break;
+      }
+
       if (wrapper.standard==false || justFailed!=null && justFailed.containsKey(wrapper.getKey())) continue;
       try {
         NamedList<Object> rsp = wrapper.solrServer.request(request);
@@ -536,6 +558,19 @@ public class LBHttpSolrServer extends SolrServer {
     }
   }
   
+  /**
+   * @return time allowed in nanos, returns -1 if no time_allowed is specified.
+   */
+  private long getTimeAllowedInNanos(final SolrRequest req) {
+    SolrParams reqParams = req.getParams();
+    return reqParams == null ? -1 :
+      TimeUnit.NANOSECONDS.convert(reqParams.getInt(CommonParams.TIME_ALLOWED, -1), TimeUnit.MILLISECONDS);
+  }
+
+  private boolean isTimeExceeded(long timeAllowedNano, long timeOutTime) {
+    return timeAllowedNano > 0 && System.nanoTime() > timeOutTime;
+  }
+
   /**
    * Takes up one dead server and check for aliveness. The check is done in a roundrobin. Each server is checked for
    * aliveness once in 'x' millis where x is decided by the setAliveCheckinterval() or it is defaulted to 1 minute
