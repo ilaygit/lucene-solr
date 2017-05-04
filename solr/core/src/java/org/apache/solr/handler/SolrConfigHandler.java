@@ -104,6 +104,11 @@ public class SolrConfigHandler extends RequestHandlerBase implements SolrCoreAwa
   public static final boolean configEditing_disabled = Boolean.getBoolean(CONFIGSET_EDITING_DISABLED_ARG);
   private static final Map<String, SolrConfig.SolrPluginInfo> namedPlugins;
   private Lock reloadLock = new ReentrantLock(true);
+
+  public Lock getReloadLock() {
+    return reloadLock;
+  }
+
   private boolean isImmutableConfigSet = false;
 
   static {
@@ -436,7 +441,7 @@ public class SolrConfigHandler extends RequestHandlerBase implements SolrCoreAwa
 
           log.debug("persisted to version : {} ", latestVersion);
           waitForAllReplicasState(req.getCore().getCoreDescriptor().getCloudDescriptor().getCollectionName(),
-              req.getCore().getCoreDescriptor().getCoreContainer().getZkController(), RequestParams.NAME, latestVersion, 30);
+              req.getCore().getCoreContainer().getZkController(), RequestParams.NAME, latestVersion, 30);
         }
 
       } else {
@@ -495,12 +500,12 @@ public class SolrConfigHandler extends RequestHandlerBase implements SolrCoreAwa
             ConfigOverlay.RESOURCE_NAME, overlay.toByteArray(), true);
         log.info("Executed config commands successfully and persisted to ZK {}", ops);
         waitForAllReplicasState(req.getCore().getCoreDescriptor().getCloudDescriptor().getCollectionName(),
-            req.getCore().getCoreDescriptor().getCoreContainer().getZkController(),
+            req.getCore().getCoreContainer().getZkController(),
             ConfigOverlay.NAME,
             latestVersion, 30);
       } else {
         SolrResourceLoader.persistConfLocally(loader, ConfigOverlay.RESOURCE_NAME, overlay.toByteArray());
-        req.getCore().getCoreDescriptor().getCoreContainer().reload(req.getCore().getName());
+        req.getCore().getCoreContainer().reload(req.getCore().getName());
         log.info("Executed config commands successfully and persited to File System {}", ops);
       }
 
@@ -700,12 +705,6 @@ public class SolrConfigHandler extends RequestHandlerBase implements SolrCoreAwa
   @Override
   public String getDescription() {
     return "Edit solrconfig.xml";
-  }
-
-
-  @Override
-  public String getVersion() {
-    return getClass().getPackage().getSpecificationVersion();
   }
 
   @Override

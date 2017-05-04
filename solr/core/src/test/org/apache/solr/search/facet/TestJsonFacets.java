@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
@@ -529,6 +530,7 @@ public class TestJsonFacets extends SolrTestCaseHS {
                 " , f2:{${terms} type:terms, field:'${cat_s}', sort:'x desc', facet:{x:'max(${num_d})'}  } " +
                 " , f3:{${terms} type:terms, field:'${cat_s}', sort:'x desc', facet:{x:'unique(${where_s})'}  } " +
                 " , f4:{${terms} type:terms, field:'${cat_s}', sort:'x desc', facet:{x:'hll(${where_s})'}  } " +
+                " , f5:{${terms} type:terms, field:'${cat_s}', sort:'x desc', facet:{x:'variance(${num_d})'}  } " +
                 "}"
         )
         , "facets=={ 'count':6, " +
@@ -536,6 +538,7 @@ public class TestJsonFacets extends SolrTestCaseHS {
             ", f2:{  'buckets':[{ val:'B', count:3, x:11.0 }, { val:'A', count:2, x:4.0 }]} " +
             ", f3:{  'buckets':[{ val:'A', count:2, x:2 },    { val:'B', count:3, x:2 }]} " +
             ", f4:{  'buckets':[{ val:'A', count:2, x:2 },    { val:'B', count:3, x:2 }]} " +
+            ", f5:{  'buckets':[{ val:'B', count:3, x:74.6666666666666 },    { val:'A', count:2, x:1.0 }]} " +
             "}"
     );
 
@@ -768,12 +771,12 @@ public class TestJsonFacets extends SolrTestCaseHS {
             "'f1':{ numBuckets:1, buckets:[{val:B, count:3}]} } "
     );
 
-    // mincount should lower numBuckets
+    // mincount should not lower numBuckets (since SOLR-10552)
     client.testJQ(params(p, "q", "*:*", "rows", "0", "facet", "true"
             , "json.facet", "{f1:{terms:{${terms} field:${cat_s}, numBuckets:true, mincount:3}}}"
         )
         , "facets=={ 'count':6, " +
-            "'f1':{ numBuckets:1, buckets:[{val:B, count:3}]} } "
+            "'f1':{ numBuckets:2, buckets:[{val:B, count:3}]} } "
     );
 
     // basic range facet
@@ -845,19 +848,18 @@ public class TestJsonFacets extends SolrTestCaseHS {
     );
 
 
-
     // stats at top level
     client.testJQ(params(p, "q", "*:*"
             , "json.facet", "{ sum1:'sum(${num_d})', sumsq1:'sumsq(${num_d})', avg1:'avg(${num_d})', avg2:'avg(def(${num_d},0))', min1:'min(${num_d})', max1:'max(${num_d})'" +
                 ", numwhere:'unique(${where_s})', unique_num_i:'unique(${num_i})', unique_num_d:'unique(${num_d})', unique_date:'unique(${date})'" +
                 ", where_hll:'hll(${where_s})', hll_num_i:'hll(${num_i})', hll_num_d:'hll(${num_d})', hll_date:'hll(${date})'" +
-                ", med:'percentile(${num_d},50)', perc:'percentile(${num_d},0,50.0,100)' }"
+                ", med:'percentile(${num_d},50)', perc:'percentile(${num_d},0,50.0,100)', variance:'variance(${num_d})', stddev:'stddev(${num_d})' }"
         )
         , "facets=={ 'count':6, " +
             "sum1:3.0, sumsq1:247.0, avg1:0.6, avg2:0.5, min1:-9.0, max1:11.0" +
             ", numwhere:2, unique_num_i:4, unique_num_d:5, unique_date:5" +
             ", where_hll:2, hll_num_i:4, hll_num_d:5, hll_date:5" +
-            ", med:2.0, perc:[-9.0,2.0,11.0]  }"
+            ", med:2.0, perc:[-9.0,2.0,11.0], variance:49.04, stddev:7.002856560004639}"
     );
 
     // stats at top level, no matches
@@ -865,13 +867,12 @@ public class TestJsonFacets extends SolrTestCaseHS {
             , "json.facet", "{ sum1:'sum(${num_d})', sumsq1:'sumsq(${num_d})', avg1:'avg(${num_d})', min1:'min(${num_d})', max1:'max(${num_d})'" +
                 ", numwhere:'unique(${where_s})', unique_num_i:'unique(${num_i})', unique_num_d:'unique(${num_d})', unique_date:'unique(${date})'" +
                 ", where_hll:'hll(${where_s})', hll_num_i:'hll(${num_i})', hll_num_d:'hll(${num_d})', hll_date:'hll(${date})'" +
-                ", med:'percentile(${num_d},50)', perc:'percentile(${num_d},0,50.0,100)' }"
+                ", med:'percentile(${num_d},50)', perc:'percentile(${num_d},0,50.0,100)', variance:'variance(${num_d})', stddev:'stddev(${num_d})' }"
         )
         , "facets=={count:0 " +
-            "/* ,sum1:0.0, sumsq1:0.0, avg1:0.0, min1:'NaN', max1:'NaN', numwhere:0 */" +
+            "\n//  ,sum1:0.0, sumsq1:0.0, avg1:0.0, min1:'NaN', max1:'NaN', numwhere:0 \n" +
             " }"
     );
-
 
     // stats at top level, matching documents, but no values in the field
     // NOTE: this represents the current state of what is returned, not the ultimate desired state.
@@ -879,7 +880,7 @@ public class TestJsonFacets extends SolrTestCaseHS {
         , "json.facet", "{ sum1:'sum(${num_d})', sumsq1:'sumsq(${num_d})', avg1:'avg(${num_d})', min1:'min(${num_d})', max1:'max(${num_d})'" +
             ", numwhere:'unique(${where_s})', unique_num_i:'unique(${num_i})', unique_num_d:'unique(${num_d})', unique_date:'unique(${date})'" +
             ", where_hll:'hll(${where_s})', hll_num_i:'hll(${num_i})', hll_num_d:'hll(${num_d})', hll_date:'hll(${date})'" +
-            ", med:'percentile(${num_d},50)', perc:'percentile(${num_d},0,50.0,100)' }"
+            ", med:'percentile(${num_d},50)', perc:'percentile(${num_d},0,50.0,100)', variance:'variance(${num_d})', stddev:'stddev(${num_d})' }"
         )
         , "facets=={count:1 " +
             ",sum1:0.0," +
@@ -894,10 +895,11 @@ public class TestJsonFacets extends SolrTestCaseHS {
             " where_hll:0," +
             " hll_num_i:0," +
             " hll_num_d:0," +
-            " hll_date:0" +
+            " hll_date:0," +
+            " variance:0.0," +
+            " stddev:0.0" +
             " }"
     );
-
 
     //
     // tests on a multi-valued field with actual multiple values, just to ensure that we are
@@ -1135,7 +1137,7 @@ public class TestJsonFacets extends SolrTestCaseHS {
                 ",f3:{${terms}  type:field, field:${num_i}, sort:'index asc' }" +
                 ",f4:{${terms}  type:field, field:${num_i}, sort:'index desc' }" +
                 ",f5:{${terms}  type:field, field:${num_i}, sort:'index desc', limit:1, missing:true, allBuckets:true, numBuckets:true }" +
-                ",f6:{${terms}  type:field, field:${num_i}, sort:'index desc', mincount:2, numBuckets:true }" +   // mincount should lower numbuckets
+                ",f6:{${terms}  type:field, field:${num_i}, sort:'index desc', mincount:2, numBuckets:true }" +   // mincount should not lower numbuckets (since SOLR-10552)
                 ",f7:{${terms}  type:field, field:${num_i}, sort:'index desc', offset:2, numBuckets:true }" +     // test offset
                 ",f8:{${terms}  type:field, field:${num_i}, sort:'index desc', offset:100, numBuckets:true }" +   // test high offset
                 ",f9:{${terms}  type:field, field:${num_i}, sort:'x desc', facet:{x:'avg(${num_d})'}, missing:true, allBuckets:true, numBuckets:true }" +            // test stats
@@ -1149,7 +1151,7 @@ public class TestJsonFacets extends SolrTestCaseHS {
             ",f3:{ buckets:[{val:-5,count:2},{val:2,count:1},{val:3,count:1},{val:7,count:1} ] } " +
             ",f4:{ buckets:[{val:7,count:1},{val:3,count:1},{val:2,count:1},{val:-5,count:2} ] } " +
             ",f5:{ buckets:[{val:7,count:1}]   , numBuckets:4, allBuckets:{count:5}, missing:{count:1}  } " +
-            ",f6:{ buckets:[{val:-5,count:2}]  , numBuckets:1  } " +
+            ",f6:{ buckets:[{val:-5,count:2}]  , numBuckets:4  } " +
             ",f7:{ buckets:[{val:2,count:1},{val:-5,count:2}] , numBuckets:4 } " +
             ",f8:{ buckets:[] , numBuckets:4 } " +
             ",f9:{ buckets:[{val:7,count:1,x:11.0},{val:2,count:1,x:4.0},{val:3,count:1,x:2.0},{val:-5,count:2,x:-7.0} ],  numBuckets:4, allBuckets:{count:5,x:0.6},missing:{count:1,x:0.0} } " +  // TODO: should missing exclude "x" because no values were collected?
@@ -1313,6 +1315,10 @@ public class TestJsonFacets extends SolrTestCaseHS {
     doBigger( client, p );
   }
 
+  private String getId(int id) {
+    return String.format(Locale.US, "%05d", id);
+  }
+
   public void doBigger(Client client, ModifiableSolrParams p) throws Exception {
     MacroExpander m = new MacroExpander(p.getMap());
 
@@ -1331,7 +1337,7 @@ public class TestJsonFacets extends SolrTestCaseHS {
     for (int i=0; i<ndocs; i++) {
       Integer cat = r.nextInt(numCat);
       Integer where = r.nextInt(numWhere);
-      client.add( sdoc("id", i, cat_s,cat, where_s, where) , null );
+      client.add( sdoc("id", getId(i), cat_s,cat, where_s, where) , null );
       Map<Integer,List<Integer>> sub = model.get(cat);
       if (sub == null) {
         sub = new HashMap<>();
@@ -1370,6 +1376,23 @@ public class TestJsonFacets extends SolrTestCaseHS {
       );
     }
 
+    client.testJQ(params(p, "q", "*:*"
+        , "json.facet", "{f1:{type:terms, field:id, limit:1, offset:990}}"
+        )
+        , "facets=={ 'count':" + ndocs + "," +
+            "'f1':{buckets:[{val:'00990',count:1}]}} "
+    );
+
+
+    for (int i=0; i<20; i++) {
+      int off = random().nextInt(ndocs);
+      client.testJQ(params(p, "q", "*:*", "off",Integer.toString(off)
+          , "json.facet", "{f1:{type:terms, field:id, limit:1, offset:${off}}}"
+          )
+          , "facets=={ 'count':" + ndocs + "," +
+              "'f1':{buckets:[{val:'"  + getId(off)  + "',count:1}]}} "
+      );
+    }
   }
 
   public void testTolerant() throws Exception {
