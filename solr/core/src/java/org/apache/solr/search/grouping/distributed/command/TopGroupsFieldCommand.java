@@ -159,31 +159,24 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
     if (fieldType.getNumberType() != null) {
       ValueSource vs = fieldType.getValueSource(field, null);
       Collection<SearchGroup<MutableValue>> v = GroupConverter.toMutable(field, firstPhaseGroups);
-//<<<<<<< HEAD
-//      if (query instanceof RankQuery){
-//        secondPassCollector = new RerankFunctionSecondPassGroupingCollector(v, groupSort, sortWithinGroup, (RankQuery) query, searcher, maxDocPerGroup, needScores, needMaxScore, true, vs, new HashMap<Object,Object>());
-//      } else {
-//        secondPassCollector = new FunctionSecondPassGroupingCollector(
-//            v, groupSort, sortWithinGroup, maxDocPerGroup, needScores, needMaxScore, true, vs, new HashMap<Object, Object>()
-//        );
-///  }
- //   } else {
-//      if (query instanceof RankQuery){
-//        secondPassCollector = new ReRankTopGroupsCollector(field.getName(), firstPhaseGroups, groupSort, sortWithinGroup, searcher, (RankQuery)query, maxDocPerGroup,  needScores, needMaxScore, true );
-//      } else {
-//        secondPassCollector = new TermSecondPassGroupingCollector(
-//            field.getName(), firstPhaseGroups, groupSort, sortWithinGroup, maxDocPerGroup, needScores, needMaxScore, true
-//        );
-//      }
-//=======
-      secondPassCollector = new TopGroupsCollector<>(new ValueSourceGroupSelector(vs, new HashMap<>()),
-          v, groupSort, withinGroupSort, maxDocPerGroup, needScores, needMaxScore, true
-      );
+      if (query instanceof RankQuery){
+        secondPassCollector = new ReRankTopGroupsCollector<>(new ValueSourceGroupSelector(vs, new HashMap<>()),
+            v, groupSort, withinGroupSort, maxDocPerGroup, needScores, needMaxScore, true, (RankQuery)query, searcher
+        );
+      } else {
+        secondPassCollector = new TopGroupsCollector<>(new ValueSourceGroupSelector(vs, new HashMap<>()),
+            v, groupSort, withinGroupSort, maxDocPerGroup, needScores, needMaxScore, true
+        );
+      }
     } else {
-      secondPassCollector = new TopGroupsCollector<>(new TermGroupSelector(field.getName()),
-          firstPhaseGroups, groupSort, withinGroupSort, maxDocPerGroup, needScores, needMaxScore, true
-      );
-//>>>>>>> master
+      if (query instanceof RankQuery) {
+        secondPassCollector = new ReRankTopGroupsCollector(new TermGroupSelector(field.getName()),
+            firstPhaseGroups, groupSort, withinGroupSort, maxDocPerGroup, needScores, needMaxScore, true, (RankQuery)query, searcher);
+      } else {
+        secondPassCollector = new TopGroupsCollector<>(new TermGroupSelector(field.getName()),
+            firstPhaseGroups, groupSort, withinGroupSort, maxDocPerGroup, needScores, needMaxScore, true
+        );
+      }
     }
     collectors.add(secondPassCollector);
     return collectors;

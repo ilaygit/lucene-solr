@@ -757,17 +757,6 @@ public class Grouping {
       int groupedDocsToCollect = getMax(groupOffset, docsPerGroup, maxDoc);
       groupedDocsToCollect = Math.max(groupedDocsToCollect, 1);
       Sort withinGroupSort = this.withinGroupSort != null ? this.withinGroupSort : Sort.RELEVANCE;
-//      if (query instanceof RankQuery) {
-//        secondPass = new ReRankTopGroupsCollector(
-//            groupBy, topGroups, groupSort, withinGroupSort, searcher, (RankQuery)query, groupedDocsToCollect, needScores,
-//            needScores, false
-//            );
-//      } else {
-//        secondPass = new TermSecondPassGroupingCollector(
-//            groupBy, topGroups, groupSort, withinGroupSort, groupedDocsToCollect, needScores,
-//            needScores, false
-//            );
-//      }
 
       if (query instanceof RankQuery) {
         secondPass = new ReRankTopGroupsCollector<>(new TermGroupSelector(groupBy),
@@ -1014,21 +1003,15 @@ public class Grouping {
       int groupdDocsToCollect = getMax(groupOffset, docsPerGroup, maxDoc);
       groupdDocsToCollect = Math.max(groupdDocsToCollect, 1);
       Sort withinGroupSort = this.withinGroupSort != null ? this.withinGroupSort : Sort.RELEVANCE;
-//      if (query instanceof RankQuery){
-//        secondPass = new RerankFunctionSecondPassGroupingCollector(topGroups, groupSort, withinGroupSort, (RankQuery)query, searcher, groupdDocsToCollect, needScores, needScores, false, groupBy, context);
-//      } else {
-//        secondPass = new FunctionSecondPassGroupingCollector(
-//            topGroups, groupSort, withinGroupSort, groupdDocsToCollect, needScores, needScores, false, groupBy, context
-//        );
-//      }
 
       if (query instanceof RankQuery){
         secondPass = new ReRankTopGroupsCollector<>(newSelector(),
             topGroups, groupSort, withinGroupSort, groupdDocsToCollect, needScores, needScores, false, (RankQuery)query, searcher);
+      } else {
+        secondPass = new TopGroupsCollector<>(newSelector(),
+            topGroups, groupSort, withinGroupSort, groupdDocsToCollect, needScores, needScores, false
+        );
       }
-      secondPass = new TopGroupsCollector<>(newSelector(),
-          topGroups, groupSort, withinGroupSort, groupdDocsToCollect, needScores, needScores, false
-      );
 
       if (totalCount == TotalCount.grouped) {
         allGroupsCollector = new AllGroupsCollector<>(newSelector());

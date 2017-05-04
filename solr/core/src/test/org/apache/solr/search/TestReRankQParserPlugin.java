@@ -697,11 +697,24 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
         "//result/doc[4]/float[@name='id'][.='3.0']", // group2
         "//result/doc[5]/float[@name='id'][.='5.0']"); // group3
 
+    // test grouping
+    params.add("group", "true");
+    params.add("group.field", "group_s");
+
+    assertQ(req(params),"*[count(//doc)=3]",
+        "//arr/lst[1]/result/doc/float[@name='id'][.='1.0']",
+        "//arr/lst[2]/result/doc/float[@name='id'][.='4.0']",
+        "//arr/lst[3]/result/doc/float[@name='id'][.='5.0']"
+    );
+
     // add reranking
     params.add("rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
       + ReRankQParserPlugin.RERANK_DOCS + "=200}");
     //rank query, rerank documents on the value of test_ti
     params.add("rqq", "{!func }field(test_ti)");
+
+    params.remove("group");
+    params.remove("group.field");
 
     assertQ(req(params), "*[count(//doc)=5]",
         "//result/doc[1]/float[@name='id'][.='5.0']", // group3
