@@ -111,7 +111,7 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
       }
 
 
-      return new TopGroupsFieldCommand(field, groupSort, query, searcher, withinGroupSort, firstPhaseGroups, maxDocPerGroup, needScores, needMaxScore);
+      return new TopGroupsFieldCommand(field, groupSort, withinGroupSort, firstPhaseGroups, maxDocPerGroup, needScores, needMaxScore, query, searcher);
     }
 
   }
@@ -130,13 +130,13 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
 
   private TopGroupsFieldCommand(SchemaField field,
                                 Sort groupSort,
-                                Query query,
-                                IndexSearcher searcher,
                                 Sort withinGroupSort,
                                 Collection<SearchGroup<BytesRef>> firstPhaseGroups,
                                 int maxDocPerGroup,
                                 boolean needScores,
-                                boolean needMaxScore) {
+                                boolean needMaxScore,
+                                Query query,
+                                IndexSearcher searcher) {
     this.field = field;
     this.groupSort = groupSort;
     this.withinGroupSort = withinGroupSort;

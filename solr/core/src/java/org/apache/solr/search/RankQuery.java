@@ -35,5 +35,4 @@ public abstract class RankQuery extends ExtendedQueryBase {
   public abstract TopDocsCollector getTopDocsCollector(TopDocsCollector previousCollector, int len, Sort sort, IndexSearcher searcher) throws IOException;
   public abstract MergeStrategy getMergeStrategy();
   public abstract RankQuery wrap(Query mainQuery);
-
 }

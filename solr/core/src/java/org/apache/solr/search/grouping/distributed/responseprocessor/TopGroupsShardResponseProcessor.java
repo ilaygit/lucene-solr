@@ -170,7 +170,8 @@ public class TopGroupsShardResponseProcessor implements ShardResponseProcessor {
       rb.mergedTopGroups.put(groupField, TopGroups.merge(topGroups.toArray(topGroupsArr), groupSort, withinGroupSort, groupOffsetDefault, docsPerGroup, TopGroups.ScoreMergeMode.None));
       if (rb.getRankQuery() != null){
         TopGroups<BytesRef> group = rb.mergedTopGroups.get(groupField);
-        for (GroupDocs g : group.groups){
+        for (int i = 0; i < group.groups.length; i++){
+          GroupDocs g = group.groups[i];
           Arrays.sort(g.scoreDocs, new Comparator<ScoreDoc>() {
             @Override
             public int compare(ScoreDoc o1, ScoreDoc o2) {
@@ -179,8 +180,8 @@ public class TopGroupsShardResponseProcessor implements ShardResponseProcessor {
               return 0;
             }
           });
-          g.maxScore = g.scoreDocs[0].score;
-          g.score = g.scoreDocs[0].score;
+          float maxScore = g.scoreDocs[0].score;
+          group.groups[i] = new GroupDocs(maxScore, maxScore, g.totalHits, g.scoreDocs, g.groupValue, g.groupSortValues);
         }
         Arrays.sort(group.groups, new Comparator<GroupDocs<BytesRef>>() {
           @Override

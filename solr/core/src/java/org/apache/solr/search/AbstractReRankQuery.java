@@ -72,6 +72,10 @@ public abstract class AbstractReRankQuery extends RankQuery {
     return new ReRankCollector(previousCollector, reRankDocs, len, sort, reRankQueryRescorer, searcher, boostedPriority);
   }
 
+  public int getReRankDocs(){
+    return reRankDocs;
+  }
+
   public Query rewrite(IndexReader reader) throws IOException {
     Query q = mainQuery.rewrite(reader);
     if (q != mainQuery) {

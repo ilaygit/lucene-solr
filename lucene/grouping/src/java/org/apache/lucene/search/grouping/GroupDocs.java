@@ -27,11 +27,11 @@ public class GroupDocs<T> {
   public final T groupValue;
 
   /** Max score in this group */
-  public float maxScore;
+  public final float maxScore;
 
   /** Overall aggregated score of this group (currently only
    *  set by join queries). */
-  public float score;
+  public final float score;
 
   /** Hits; this may be {@link
    * org.apache.lucene.search.FieldDoc} instances if the

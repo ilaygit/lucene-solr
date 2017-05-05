@@ -132,33 +132,9 @@ public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
           group.sortValues);
       maxScore = Math.max(maxScore, topDocs.getMaxScore());
     }
-   // for (SearchGroup<BytesRef> group : groupDocsResult) {
-//      TopDocsCollector<?> collector;
-//      if (query != null) {
-//        collector = groupMap.get(group.groupValue).collector;
-//        collector = query.getTopDocsCollector(collector, DEFAULT_GROUPING_RERANKING, groupSort, searcher);
-//        groupMap.put(group.groupValue, new SearchGroupDocs<BytesRef>(group.groupValue, collector));
-//      }
-//    }
     return new TopGroups<>(groupSort.getSort(),
         withinGroupSort.getSort(),
         totalHitCount, totalGroupedHitCount, groupDocsResult,
         maxScore);
   }
-//
-//  public ReRankTopGroupsCollector(String groupField, Collection<SearchGroup<BytesRef>> groups,
-//      Sort groupSort, Sort withinGroupSort, IndexSearcher searcher, RankQuery query, int maxDocsPerGroup, boolean getScores, boolean getMaxScores,
-//      boolean fillSortFields) throws IOException {
-//    super(groupField, groups, groupSort, withinGroupSort, maxDocsPerGroup, getScores, getMaxScores, fillSortFields);
-//
-//
-//    for (SearchGroup<BytesRef> group : groups) {
-//      TopDocsCollector<?> collector;
-//      if (query != null) {
-//        collector = groupMap.get(group.groupValue).collector;
-//        collector = query.getTopDocsCollector(collector, DEFAULT_GROUPING_RERANKING, groupSort, searcher);
-//        groupMap.put(group.groupValue, new SearchGroupDocs<BytesRef>(group.groupValue, collector));
-//      }
-//    }
-//  }
 }

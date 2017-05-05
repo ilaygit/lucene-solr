@@ -51,7 +51,7 @@ public class SecondPassGroupingCollector<T> extends SimpleCollector {
   public SecondPassGroupingCollector(GroupSelector<T> groupSelector, Collection<SearchGroup<T>> groups, GroupReducer<T, ?> reducer) {
 
     //System.out.println("SP init");
-    //dceccarelli4 want to check if groups is null here?
+    //Do we want to check if groups is null here? instead of checking at line 62?
     if (groups.isEmpty()) {
       throw new IllegalArgumentException("no groups to collect (groups is empty)");
     }
@@ -90,8 +90,6 @@ public class SecondPassGroupingCollector<T> extends SimpleCollector {
     T value = groupSelector.currentValue();
     groupReducer.collect(value, doc);
   }
-
-
 
   @Override
   protected void doSetNextReader(LeafReaderContext readerContext) throws IOException {
