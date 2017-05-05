@@ -94,6 +94,7 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     params.add("bff", "field(test_ti)");
     params.add("start", "0");
     params.add("rows", "6");
+    params.add("df", "text");
     assertQ(req(params), "*[count(//doc)=6]",
         "//result/doc[1]/float[@name='id'][.='3.0']",
         "//result/doc[2]/float[@name='id'][.='4.0']",
@@ -112,6 +113,7 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     params.add("fl", "id,score");
     params.add("start", "0");
     params.add("rows", "10");
+    params.add("df", "text");
 
     assertQ(req(params), "*[count(//doc)=6]",
         "//result/doc[1]/float[@name='id'][.='2.0']",
@@ -133,6 +135,7 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     params.add("start", "0");
     params.add("rows", "10");
     params.add("sort", "score desc");
+    params.add("df", "text");
     assertQ(req(params), "*[count(//doc)=6]",
         "//result/doc[1]/float[@name='id'][.='2.0']",
         "//result/doc[2]/float[@name='id'][.='6.0']",
@@ -154,6 +157,7 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     params.add("start", "0");
     params.add("rows", "10");
     params.add("sort", "score desc,test_ti asc");
+    params.add("df", "text");
 
     assertQ(req(params), "*[count(//doc)=6]",
         "//result/doc[1]/float[@name='id'][.='2.0']",
@@ -197,6 +201,7 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     params.add("fl", "id,score");
     params.add("start", "0");
     params.add("rows", "10");
+    params.add("df", "text");
 
     assertQ(req(params), "*[count(//doc)=6]",
         "//result/doc[1]/float[@name='id'][.='2.0']",
@@ -551,6 +556,7 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     params.add("fl", "id,score");
     params.add("start", "0");
     params.add("rows", "2");
+    params.add("df", "text");
 
     assertQ(req(params), "*[count(//doc)=2]",
         "//result/doc[1]/float[@name='id'][.='8.0']",

@@ -204,6 +204,12 @@ New Features
 
 * SOLR-10430: Add ls command to ZkCLI for listing only sub-directories. (Peter Szantai-Kis via Mark Miller)
 
+* SOLR-10583: JSON Faceting now supports a query time 'join' domain change option (hossman)
+
+* SOLR-9530: An Update Processor to convert normal update operation to an atomic operations such as
+  add, set,inc, remove ,set, removeregex (Amrit Sarkar, noble)
+
+
 Optimizations
 ----------------------
 
@@ -329,6 +335,11 @@ Other Changes
 * SOLR-9386: Upgrade Zookeeper to 3.4.10. (Shawn Heisey, Steve Rowe)
 
 * SOLR-10519: SolrCLI.atPath cannot handle children that begin with a slash. (Erick Erickson)
+
+* SOLR-9867: Adding isLoading=true as core status. Fixing start after stop scenario in bin/solr
+  (Andrey Kudryavtsev, Mikhail Khludnev)
+
+* SOLR-7041: Cutover tests to using 'q.op' and 'df' instead of schema 'defaultOperator' and 'defaultSearchField' (janhoy)
 
 ==================  6.5.1 ==================
 
