@@ -737,7 +737,6 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
 
     params.add("group", "true");
     params.add("group.field", "group_s");
-    System.out.println("dceccarelli4" + h.query(req(params)));
 
     assertQ(req(params),"*[count(//doc)=3]",
         "//arr/lst[1]/result/doc/float[@name='id'][.='5.0']",
@@ -751,7 +750,7 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     // 3. finally reranked by test_ti
     // rerank query will add the score so:
 
-    // 1. first pass (doc_id, score):    results = (1, 9)(2, 8) (3, 2) (4, 3) (5, 1)
+    // 1. first pass (doc_id, score):    results = (1, 9) (2, 8) (4, 3), (3, 2) (5, 1)
     // 2. grouping:                      group1(max score=9) = [(1, 9) (3, 2)],  group2(max score = 8) = [(2, 8) (4, 3) (5, 1)]
     // 3. reranking (scoring):           group1 = [ (1, 9 + 5), (3, 2 + 100) ]  group2 [ (2, 8 + 50), (4, 3 + 74), (5, 1 + 1000)]
     //      reordered:                   group2(max score = 1001) [ (5, 1001) (4, 77) (2, 58)) group1(max score = 102) = [ (3, 102) (1, 14)  ]
@@ -779,4 +778,58 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
     );
 
   }
+
+  @Test
+  public void testRerankTopGroups() throws Exception {
+    assertU(delQ("*:*"));
+    assertU(commit());
+    String[] doc1 = {"id", "1", "term_s", "YYYY", "group_s", "group1", "test_ti", "5", "test_tl", "9", "test_tf",
+        "2000"};
+    assertU(adoc(doc1));
+    assertU(commit());
+    String[] doc2 = {"id", "2", "term_s", "YYYY", "group_s", "group1", "test_ti", "50", "test_tl", "8", "test_tf",
+        "200"};
+    assertU(adoc(doc2));
+    assertU(commit());
+    String[] doc3 = {"id", "3", "term_s", "YYYY", "group_s", "group2", "test_ti", "100", "test_tl", "2", "test_tf",
+        "2000"};
+    assertU(adoc(doc3));
+    assertU(commit());
+    String[] doc4 = {"id", "4", "term_s", "YYYY", "group_s", "group2", "test_ti", "74", "test_tl", "3", "test_tf",
+        "200"};
+    assertU(adoc(doc4));
+    String[] doc5 = {"id", "5", "term_s", "YYYY", "group_s", "group3", "test_ti", "1000", "test_tl", "1", "test_tf",
+        "200"};
+    assertU(adoc(doc5));
+    assertU(commit());
+
+    // The first pass must return the top N groups reranked, otherwise reranking can change the documents selected
+    // within a group and the order of the groups, but can put a better group in the ranking.
+    ModifiableSolrParams params = new ModifiableSolrParams();
+
+    // first query will sort the documents on the value of test_tl
+    params.add("q", "{!func}id");
+    params.add("start", "0");
+    params.add("rows", "1");
+    params.add("fl", "id,score,[explain]");
+
+    // test grouping
+    params.add("group", "true");
+    params.add("group.field", "group_s");
+
+    assertQ(req(params),"*[count(//doc)=1]",
+        "//arr/lst[1]/result/doc/float[@name='id'][.='5.0']");
+
+    params.remove("rq");
+    params.add("rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
+        + ReRankQParserPlugin.RERANK_DOCS + "=5 "+ ReRankQParserPlugin.RERANK_WEIGHT + "=1 }");
+    //rank query, rerank documents on the value of test_ti
+    params.add("rqq", "{!func }field(test_tl)");
+    assertQ(req(params), "*[count(//doc)=1]",
+        "//arr/lst[1]/result/doc/float[@name='id'][.='1.0']");
+
+  }
+
+
+
 }

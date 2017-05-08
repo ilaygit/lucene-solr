@@ -35,6 +35,7 @@ import org.apache.lucene.search.grouping.SearchGroup;
 import org.apache.lucene.search.grouping.SecondPassGroupingCollector;
 import org.apache.lucene.search.grouping.TopGroups;
 import org.apache.lucene.search.grouping.TopGroupsCollector;
+import org.apache.solr.search.AbstractReRankQuery;
 import org.apache.solr.search.RankQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +81,7 @@ public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
     private final RankQuery query;
     private final IndexSearcher searcher;
     private final Sort groupSort;
+    private final int maxDocsPerGroup;
 
     TopDocsReducer(Sort withinGroupSort,
                    int maxDocsPerGroup, boolean getScores, boolean getMaxScores, boolean fillSortFields, RankQuery query, IndexSearcher searcher) {
@@ -90,6 +92,7 @@ public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
       this.query = query;
       this.searcher = searcher;
       this.groupSort = withinGroupSort;
+      this.maxDocsPerGroup = maxDocsPerGroup;
 
     }
 
@@ -102,8 +105,14 @@ public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
     @Override
     protected TopDocsCollector<?> newCollector() {
       TopDocsCollector<?> collector = supplier.get();
+      final int len;
+      if (query instanceof AbstractReRankQuery){
+        len = ((AbstractReRankQuery) query).getReRankDocs();
+      } else {
+        len = maxDocsPerGroup;
+      }
       try {
-        collector = this.query.getTopDocsCollector(DEFAULT_GROUPING_RERANKING, groupSort, searcher);
+        collector = this.query.getTopDocsCollector(len, groupSort, searcher);
       } catch (IOException e) {
         e.printStackTrace();
       }
