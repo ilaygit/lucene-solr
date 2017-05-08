@@ -70,6 +70,7 @@ import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
+import org.apache.solr.search.AbstractReRankQuery;
 import org.apache.solr.search.CursorMark;
 import org.apache.solr.search.DocIterator;
 import org.apache.solr.search.DocList;
@@ -489,6 +490,7 @@ public class QueryComponent extends SearchComponent
         Grouping.TotalCount defaultTotalCount = groupingSpec.isIncludeGroupCount() ?
             Grouping.TotalCount.grouped : Grouping.TotalCount.ungrouped;
         int limitDefault = cmd.getLen(); // this is normally from "rows"
+
         Grouping grouping =
             new Grouping(searcher, result, cmd, cacheSecondPassSearch, maxDocsPercentageToCache, groupingSpec.isMain());
         grouping.setGroupSort(groupingSpec.getGroupSort())
@@ -499,6 +501,10 @@ public class QueryComponent extends SearchComponent
             .setDocsPerGroupDefault(groupingSpec.getWithinGroupLimit())
             .setGroupOffsetDefault(groupingSpec.getWithinGroupOffset())
             .setGetGroupedDocSet(groupingSpec.isTruncateGroups());
+
+        if (cmd.getQuery() instanceof AbstractReRankQuery){
+          grouping.reRankGroups(((AbstractReRankQuery)cmd.getQuery()).getReRankDocs());
+        }
 
         if (groupingSpec.getFields() != null) {
           for (String field : groupingSpec.getFields()) {

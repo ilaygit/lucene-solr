@@ -95,6 +95,7 @@ public class Grouping {
   private int groupOffsetDefault;
   private Format defaultFormat;
   private TotalCount defaultTotalCount;
+  private int reRankGroups;
 
   private int maxDoc;
   private boolean needScores;
@@ -478,6 +479,10 @@ public class Grouping {
     return signalCacheWarning;
   }
 
+  public void reRankGroups(int reRankGroups) {
+    this.reRankGroups = reRankGroups;
+  }
+
   //======================================   Inner classes =============================================================
 
   public static enum Format {
@@ -713,7 +718,11 @@ public class Grouping {
      */
     @Override
     protected void prepare() throws IOException {
-      actualGroupsToFind = getMax(offset, numGroups, maxDoc);
+      if (reRankGroups > 0){
+        actualGroupsToFind = getMax(offset, reRankGroups, maxDoc);
+      } else {
+        actualGroupsToFind = getMax(offset, numGroups, maxDoc);
+      }
     }
 
     /**
@@ -737,6 +746,7 @@ public class Grouping {
      */
     @Override
     protected Collector createSecondPassCollector() throws IOException {
+      actualGroupsToFind = getMax(offset, numGroups, maxDoc);
       if (actualGroupsToFind <= 0) {
         allGroupsCollector = new AllGroupsCollector<>(new TermGroupSelector(groupBy));
         return totalCount == TotalCount.grouped ? allGroupsCollector : null;
@@ -803,6 +813,10 @@ public class Grouping {
             return 0;
           }
         });
+        result = new TopGroups(groupSort.getSort(),
+            withinGroupSort.getSort(),
+            result.totalHitCount, result.totalGroupedHitCount, Arrays.copyOfRange(result.groups, 0, Math.min(result.groups.length, limitDefault)),
+            maxScore);
       }
 
       if (main) {
@@ -959,7 +973,11 @@ public class Grouping {
     protected void prepare() throws IOException {
       context = ValueSource.newContext(searcher);
       groupBy.createWeight(context, searcher);
-      actualGroupsToFind = getMax(offset, numGroups, maxDoc);
+      if (reRankGroups > 0){
+        actualGroupsToFind = getMax(offset, reRankGroups, maxDoc);
+      } else {
+        actualGroupsToFind = getMax(offset, numGroups, maxDoc);
+      }
     }
 
     /**
@@ -983,6 +1001,7 @@ public class Grouping {
      */
     @Override
     protected Collector createSecondPassCollector() throws IOException {
+      actualGroupsToFind = getMax(offset, numGroups, maxDoc);
       if (actualGroupsToFind <= 0) {
         allGroupsCollector = new AllGroupsCollector<>(newSelector());
         return totalCount == TotalCount.grouped ? allGroupsCollector : null;
@@ -1046,6 +1065,11 @@ public class Grouping {
             return 0;
           }
         });
+        result = new TopGroups(groupSort.getSort(),
+            withinGroupSort.getSort(),
+            result.totalHitCount, result.totalGroupedHitCount, Arrays.copyOfRange(result.groups, 0, Math.min(result.groups.length, limitDefault)),
+            maxScore);
+
       }
 
       if (main) {

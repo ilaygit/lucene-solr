@@ -822,11 +822,19 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
 
     params.remove("rq");
     params.add("rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
-        + ReRankQParserPlugin.RERANK_DOCS + "=5 "+ ReRankQParserPlugin.RERANK_WEIGHT + "=1 }");
+        + ReRankQParserPlugin.RERANK_DOCS + "=3 "+ ReRankQParserPlugin.RERANK_WEIGHT + "=1 }");
     //rank query, rerank documents on the value of test_ti
     params.add("rqq", "{!func }field(test_tl)");
     assertQ(req(params), "*[count(//doc)=1]",
         "//arr/lst[1]/result/doc/float[@name='id'][.='1.0']");
+
+    params.remove("rq");
+    params.add("rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
+        + ReRankQParserPlugin.RERANK_DOCS + "=2 "+ ReRankQParserPlugin.RERANK_WEIGHT + "=1 }");
+    assertQ(req(params), "*[count(//doc)=1]",
+        "//arr/lst[1]/result/doc/float[@name='id'][.='4.0']");
+
+
 
   }
 
