@@ -103,7 +103,7 @@ public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
     protected TopDocsCollector<?> newCollector() {
       TopDocsCollector<?> collector = supplier.get();
       try {
-        collector = this.query.getTopDocsCollector(collector, DEFAULT_GROUPING_RERANKING, groupSort, searcher);
+        collector = this.query.getTopDocsCollector(DEFAULT_GROUPING_RERANKING, groupSort, searcher);
       } catch (IOException e) {
         e.printStackTrace();
       }

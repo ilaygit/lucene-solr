@@ -1497,7 +1497,7 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
       assert null == cmd.getCursorMark() : "have cursor but no sort";
       if (q instanceof RankQuery) {
         RankQuery rq = (RankQuery) q;
-        return rq.getTopDocsCollector(TopScoreDocCollector.create(len), len, cmd.getSort(), this);
+        return rq.getTopDocsCollector(len, cmd.getSort(), this);
       }
       return TopScoreDocCollector.create(len);
     } else {
@@ -1512,7 +1512,7 @@ public class SolrIndexSearcher extends IndexSearcher implements Closeable, SolrI
       final FieldDoc searchAfter = (null != cursor ? cursor.getSearchAfterFieldDoc() : null);
       if (q instanceof RankQuery) {
         RankQuery rq = (RankQuery) q;
-        return rq.getTopDocsCollector(TopFieldCollector.create(weightedSort, len, searchAfter, fillFields, needScores, needScores), len, cmd.getSort(), this);
+        return rq.getTopDocsCollector(len, weightedSort, this);
       }
       return TopFieldCollector.create(weightedSort, len, searchAfter, fillFields, needScores, needScores);
     }

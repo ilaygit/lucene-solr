@@ -47,7 +47,6 @@ public class ReRankCollector extends TopDocsCollector {
   final private int length;
   final private Map<BytesRef, Integer> boostedPriority;
   final private Rescorer reRankQueryRescorer;
-  final private TopDocsCollector previousCollector;
 
   @Deprecated
   public ReRankCollector(int reRankDocs,
@@ -56,11 +55,10 @@ public class ReRankCollector extends TopDocsCollector {
       QueryCommand cmd,
       IndexSearcher searcher,
       Map<BytesRef, Integer> boostedPriority) throws IOException {
-    this(null, reRankDocs, length, cmd.getSort(), reRankQueryRescorer, searcher, boostedPriority);
+    this(reRankDocs, length, cmd.getSort(), reRankQueryRescorer, searcher, boostedPriority);
   }
 
-  public ReRankCollector(TopDocsCollector previousCollector,
-                         int reRankDocs,
+  public ReRankCollector(int reRankDocs,
                          int length,
                          Sort sort,
                          Rescorer reRankQueryRescorer,
@@ -70,7 +68,6 @@ public class ReRankCollector extends TopDocsCollector {
     this.length = length;
     this.reRankDocs = reRankDocs;
     this.boostedPriority = boostedPriority;
-    this.previousCollector = previousCollector;
     if(sort == null) {
       this.mainCollector = TopScoreDocCollector.create( Math.max(this.reRankDocs, length));
     } else {

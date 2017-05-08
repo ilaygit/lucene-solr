@@ -55,11 +55,11 @@ public abstract class AbstractReRankQuery extends RankQuery {
   }
 
   public TopDocsCollector getTopDocsCollector(int len, QueryCommand cmd, IndexSearcher searcher) throws IOException {
-      return getTopDocsCollector(null, len, cmd.getSort(), searcher);
+      return getTopDocsCollector(len, cmd.getSort(), searcher);
   }
 
 
-  public TopDocsCollector getTopDocsCollector(TopDocsCollector previousCollector, int len, Sort sort, IndexSearcher searcher) throws IOException {
+  public TopDocsCollector getTopDocsCollector(int len, Sort sort, IndexSearcher searcher) throws IOException {
 
     if(this.boostedPriority == null) {
       SolrRequestInfo info = SolrRequestInfo.getRequestInfo();
@@ -69,7 +69,7 @@ public abstract class AbstractReRankQuery extends RankQuery {
       }
     }
 
-    return new ReRankCollector(previousCollector, reRankDocs, len, sort, reRankQueryRescorer, searcher, boostedPriority);
+    return new ReRankCollector(reRankDocs, len, sort, reRankQueryRescorer, searcher, boostedPriority);
   }
 
   public int getReRankDocs(){

@@ -32,7 +32,7 @@ public abstract class RankQuery extends ExtendedQueryBase {
 
   @Deprecated
   public abstract TopDocsCollector getTopDocsCollector(int len, QueryCommand cmd, IndexSearcher searcher) throws IOException;
-  public abstract TopDocsCollector getTopDocsCollector(TopDocsCollector previousCollector, int len, Sort sort, IndexSearcher searcher) throws IOException;
+  public abstract TopDocsCollector getTopDocsCollector(int len, Sort sort, IndexSearcher searcher) throws IOException;
   public abstract MergeStrategy getMergeStrategy();
   public abstract RankQuery wrap(Query mainQuery);
 }

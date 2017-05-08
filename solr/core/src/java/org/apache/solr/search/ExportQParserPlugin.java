@@ -88,12 +88,11 @@ public class ExportQParserPlugin extends QParserPlugin {
                                                 QueryCommand cmd,
                                                 IndexSearcher searcher) throws IOException {
 
-      return getTopDocsCollector(null, len, cmd.getSort(), searcher);
+      return getTopDocsCollector(len, cmd.getSort(), searcher);
     }
 
     @Override
-    public TopDocsCollector getTopDocsCollector(TopDocsCollector previousCollector,
-                                                int len,
+    public TopDocsCollector getTopDocsCollector(int len,
                                                 Sort sort,
                                                 IndexSearcher searcher) throws IOException {
       int leafCount = searcher.getTopReaderContext().leaves().size();
