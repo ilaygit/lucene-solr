@@ -254,7 +254,7 @@ public class Overseer {
                   stats.error(operation);
                 } finally {
                   final long elapsed_nanos = timerContext.stop();
-                  log.info("operation {} took {} ms", operation, TimeUnit.MILLISECONDS.convert(elapsed_nanos, TimeUnit.NANOSECONDS));
+                  log.info("operation {} took {} ms ({} us)", operation, TimeUnit.MILLISECONDS.convert(elapsed_nanos, TimeUnit.NANOSECONDS), TimeUnit.MICROSECONDS.convert(elapsed_nanos, TimeUnit.NANOSECONDS));
                 }
                 workQueue.offer(head.getBytes());
 
