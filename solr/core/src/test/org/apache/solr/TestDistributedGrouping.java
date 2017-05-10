@@ -318,11 +318,6 @@ public class TestDistributedGrouping extends BaseDistributedSearchTestCase {
     rsp = query("q", "{!func}id", "rows", 3, "fl",  "id," + i1, "group", "true",
         "group.field", i1dv, "group.limit", 1, "rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
             + ReRankQParserPlugin.RERANK_DOCS + "=1000}", "rqq", "{!func }field("+i1dv+")");
-
-
-
-
-
   }
 
   private QueryResponse simpleQuery(Object... queryParams) throws SolrServerException, IOException {
