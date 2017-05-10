@@ -63,9 +63,6 @@ public class TopGroupsCollector<T> extends SecondPassGroupingCollector<T> {
     this(new TopDocsReducer<>(withinGroupSort, maxDocsPerGroup, getScores, getMaxScores, fillSortFields), groupSelector, groups, groupSort, withinGroupSort, maxDocsPerGroup, getScores, getMaxScores, fillSortFields);
   }
 
-
-
-
   private static class TopDocsReducer<T> extends GroupReducer<T, TopDocsCollector<?>> {
 
     private final Supplier<TopDocsCollector<?>> supplier;

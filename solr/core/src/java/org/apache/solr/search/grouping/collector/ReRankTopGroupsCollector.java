@@ -60,6 +60,8 @@ public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
    * @param getScores         if true, record the scores of all docs in each group
    * @param getMaxScores      if true, record the maximum score for each group
    * @param fillSortFields    if true, record the sort field values for all docs
+   * @param query             the rankQuery if provided by the user, null otherwise
+   * @param searcher          an index searcher
    */
   public ReRankTopGroupsCollector(GroupSelector<T> groupSelector, Collection<SearchGroup<T>> groups, Sort groupSort, Sort withinGroupSort,
                                   int maxDocsPerGroup, boolean getScores, boolean getMaxScores, boolean fillSortFields, RankQuery query, IndexSearcher searcher) {
@@ -70,7 +72,6 @@ public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
     this.maxDocsPerGroup = maxDocsPerGroup;
     this.query = query;
     this.searcher = searcher;
-
   }
 
   private static class TopDocsReducer<T> extends GroupReducer<T, TopDocsCollector<?>> {

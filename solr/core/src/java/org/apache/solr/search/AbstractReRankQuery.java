@@ -91,4 +91,3 @@ public abstract class AbstractReRankQuery extends RankQuery {
     return new ReRankWeight(mainQuery, reRankQueryRescorer, searcher, mainWeight);
   }
 }
-

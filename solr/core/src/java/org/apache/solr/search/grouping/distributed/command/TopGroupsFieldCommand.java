@@ -110,7 +110,6 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
         throw new IllegalStateException("All required fields must be set");
       }
 
-
       return new TopGroupsFieldCommand(field, groupSort, withinGroupSort, firstPhaseGroups, maxDocPerGroup, needScores, needMaxScore, query, searcher);
     }
 
