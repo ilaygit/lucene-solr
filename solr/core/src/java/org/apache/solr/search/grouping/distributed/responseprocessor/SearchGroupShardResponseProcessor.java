@@ -37,6 +37,8 @@ import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.handler.component.ShardRequest;
 import org.apache.solr.handler.component.ShardResponse;
 import org.apache.solr.response.SolrQueryResponse;
+import org.apache.solr.search.AbstractReRankQuery;
+import org.apache.solr.search.RankQuery;
 import org.apache.solr.search.SortSpec;
 import org.apache.solr.search.grouping.distributed.ShardResponseProcessor;
 import org.apache.solr.search.grouping.distributed.command.SearchGroupsFieldCommandResult;
@@ -144,7 +146,14 @@ public class SearchGroupShardResponseProcessor implements ShardResponseProcessor
     rb.firstPhaseElapsedTime = maxElapsedTime;
     for (String groupField : commandSearchGroups.keySet()) {
       List<Collection<SearchGroup<BytesRef>>> topGroups = commandSearchGroups.get(groupField);
-      Collection<SearchGroup<BytesRef>> mergedTopGroups = SearchGroup.merge(topGroups, ss.getOffset(), ss.getCount(), groupSort);
+      final int maxSize;
+      RankQuery rq = rb.getRankQuery();
+      if (rq instanceof AbstractReRankQuery){
+        maxSize = ((AbstractReRankQuery) rq).getReRankDocs();
+      } else {
+        maxSize = ss.getCount();
+      }
+      Collection<SearchGroup<BytesRef>> mergedTopGroups = SearchGroup.merge(topGroups, ss.getOffset(), maxSize, groupSort);
       if (mergedTopGroups == null) {
         continue;
       }

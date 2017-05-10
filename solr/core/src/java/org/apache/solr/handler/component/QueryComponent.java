@@ -405,10 +405,17 @@ public class QueryComponent extends SearchComponent
               .setSearcher(searcher);
 
           for (String field : groupingSpec.getFields()) {
+            final int topNGroups;
+            Query query = cmd.getQuery();
+            if (query instanceof AbstractReRankQuery){
+              topNGroups = cmd.getOffset() + ((AbstractReRankQuery)query).getReRankDocs();
+            } else {
+              topNGroups = cmd.getOffset() + cmd.getLen();
+            }
             topsGroupsActionBuilder.addCommandField(new SearchGroupsFieldCommand.Builder()
                 .setField(schema.getField(field))
                 .setGroupSort(groupingSpec.getGroupSort())
-                .setTopNGroups(cmd.getOffset() + cmd.getLen())
+                .setTopNGroups(topNGroups)
                 .setIncludeGroupCount(groupingSpec.isIncludeGroupCount())
                 .build()
             );

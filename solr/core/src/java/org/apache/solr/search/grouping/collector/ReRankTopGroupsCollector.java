@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
 
   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final int DEFAULT_GROUPING_RERANKING = 1000;
   private Sort groupSort;
   private Sort withinGroupSort;
   private int maxDocsPerGroup;
@@ -114,7 +113,8 @@ public class ReRankTopGroupsCollector<T> extends TopGroupsCollector<T> {
       try {
         collector = this.query.getTopDocsCollector(len, groupSort, searcher);
       } catch (IOException e) {
-        e.printStackTrace();
+        // this should never happen
+        logger.error("Cannot rerank groups ", e);
       }
       return collector;
     }
