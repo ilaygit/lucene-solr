@@ -14,25 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.security;
+package org.apache.solr.metrics;
 
-import java.util.List;
-import java.util.Map;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 
-import org.apache.solr.common.util.CommandOperation;
-
-/**An interface to be implemented by a Plugin whose Configuration is runtime editable
+/**
  *
  */
-public interface ConfigEditablePlugin {
+public class MockTimerSupplier implements MetricRegistry.MetricSupplier<Timer> {
+  public boolean boolParam;
+  public String strParam;
+  public int intParam;
 
+  public void setBoolParam(boolean boolParam) {
+    this.boolParam = boolParam;
+  }
 
-  /** Operate the commands on the latest conf and return a new conf object
-   * If there are errors in the commands , throw a SolrException. return a null
-   * if no changes are to be made as a result of this edit. It is the responsibility
-   * of the implementation to ensure that the returned config is valid . The framework
-   * does no validation of the data
-   */
-  Map<String,Object> edit(Map<String, Object> latestConf, List<CommandOperation> commands);
+  public void setStrParam(String strParam) {
+    this.strParam = strParam;
+  }
 
+  public void setIntParam(int intParam) {
+    this.intParam = intParam;
+  }
+
+  @Override
+  public Timer newMetric() {
+    return new Timer();
+  }
 }

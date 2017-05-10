@@ -14,25 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.security;
+package org.apache.solr.metrics;
 
-import java.util.List;
-import java.util.Map;
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import org.apache.solr.core.PluginInfo;
+import org.apache.solr.util.plugin.PluginInfoInitialized;
 
-import org.apache.solr.common.util.CommandOperation;
-
-/**An interface to be implemented by a Plugin whose Configuration is runtime editable
+/**
  *
  */
-public interface ConfigEditablePlugin {
+public class MockHistogramSupplier implements MetricRegistry.MetricSupplier<Histogram>, PluginInfoInitialized {
+  public PluginInfo info;
 
+  @Override
+  public Histogram newMetric() {
+    return new Histogram(new ExponentiallyDecayingReservoir());
+  }
 
-  /** Operate the commands on the latest conf and return a new conf object
-   * If there are errors in the commands , throw a SolrException. return a null
-   * if no changes are to be made as a result of this edit. It is the responsibility
-   * of the implementation to ensure that the returned config is valid . The framework
-   * does no validation of the data
-   */
-  Map<String,Object> edit(Map<String, Object> latestConf, List<CommandOperation> commands);
-
+  @Override
+  public void init(PluginInfo info) {
+    this.info = info;
+  }
 }
