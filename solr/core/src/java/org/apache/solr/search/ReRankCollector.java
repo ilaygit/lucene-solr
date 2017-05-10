@@ -65,11 +65,11 @@ public class ReRankCollector extends TopDocsCollector {
                          IndexSearcher searcher,
                          Map<BytesRef, Integer> boostedPriority) throws IOException {
     super(null);
-    this.length = length;
     this.reRankDocs = reRankDocs;
+    this.length = length;
     this.boostedPriority = boostedPriority;
     if(sort == null) {
-      this.mainCollector = TopScoreDocCollector.create( Math.max(this.reRankDocs, length));
+      this.mainCollector = TopScoreDocCollector.create(Math.max(this.reRankDocs, length));
     } else {
       sort = sort.rewrite(searcher);
       this.mainCollector = TopFieldCollector.create(sort, Math.max(this.reRankDocs, length), true, true, true);

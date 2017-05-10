@@ -833,11 +833,5 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
         + ReRankQParserPlugin.RERANK_DOCS + "=2 "+ ReRankQParserPlugin.RERANK_WEIGHT + "=1 }");
     assertQ(req(params), "*[count(//doc)=1]",
         "//arr/lst[1]/result/doc/float[@name='id'][.='4.0']");
-
-
-
   }
-
-
-
 }
