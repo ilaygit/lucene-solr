@@ -138,7 +138,7 @@ public class BinaryResponseWriter implements BinaryQueryResponseWriter {
       context.req = solrQueryRequest;
       context.searcher = searcher;
       final RTimer timer = (transformer != null) ? solrQueryRequest.getRequestTimer().sub("transformer") : null;
-      if (timer != null){
+      if (timer != null && ! timer.isPaused()){
         timer.pause();
       }
       if(transformer != null) {
@@ -156,7 +156,7 @@ public class BinaryResponseWriter implements BinaryQueryResponseWriter {
         if(transformer != null) {
           transformer.transform(sdoc, id);
         }
-        if (timer != null) {
+        if (timer != null && ! timer.isPaused()) {
           timer.pause();
         }
         codec.writeSolrDocument(sdoc);

@@ -55,6 +55,10 @@ public class RTimer {
     state = STARTED;
   }
 
+  public boolean isPaused(){
+    return state == PAUSED;
+  }
+
   /** Get current time
    *
    * May override to implement a different timer (CPU time, etc).
@@ -101,9 +105,10 @@ public class RTimer {
     }
  }
 
-  /** Create new subtimer with given name
-   *
-   * Subtimer will be started.
+  /**
+   * Returns a subtimer given its name.
+   * If the subtimer did not exist a new subtimer will be started and returned,
+   * otherwise an existing subtimer will be returned as-is.
    */
   public RTimer sub(String desc) {
     RTimer child = children.get( desc );

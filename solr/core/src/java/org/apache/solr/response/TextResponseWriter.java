@@ -274,7 +274,7 @@ public abstract class TextResponseWriter {
     context.iterator = ids.iterator();
 
     final RTimer timer = (transformer!=null) ? req.getRequestTimer().sub("transformer") : null;
-    if (timer != null){
+    if (timer != null && ! timer.isPaused()){
       timer.pause();
     }
 
@@ -301,8 +301,8 @@ public abstract class TextResponseWriter {
     }
 
     if(transformer != null) {
-      if (timer != null){
-        timer.stop();
+      if (timer != null && timer.isPaused()){
+        timer.pause();
       }
       transformer.setContext( null );
     }
