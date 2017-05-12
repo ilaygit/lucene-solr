@@ -17,9 +17,9 @@ package org.apache.solr.highlight;
  */
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,27 +67,19 @@ public abstract class SolrHighlighter
       if (emptyArray(defaultFields)) {
         String defaultSearchField = request.getSchema().getDefaultSearchFieldName();
         fields = null == defaultSearchField ? new String[]{} : new String[]{defaultSearchField};
-      }
-      else {
+      } else {
         fields = defaultFields;
       }
-    }
-    else if (fields.length == 1) {
-      if (fields[0].contains("*")) {
-        // create a Java regular expression from the wildcard string
-        String fieldRegex = fields[0].replaceAll("\\*", ".*");
-        Collection<String> storedHighlightFieldNames = request.getSearcher().getStoredHighlightFieldNames();
-        List<String> storedFieldsToHighlight = new ArrayList<>();
-        for (String storedFieldName: storedHighlightFieldNames) {
-            if (storedFieldName.matches(fieldRegex)) {
-              storedFieldsToHighlight.add(storedFieldName);
-            }
-        }
-        fields = storedFieldsToHighlight.toArray(new String[] {});
-      } else {
-        // if there's a single request/handler value, it may be a space/comma separated list
-        fields = SolrPluginUtils.split(fields[0]);
+    } else {
+      Set<String> expandedFields = new LinkedHashSet<String>();
+      Collection<String> storedHighlightFieldNames = request.getSearcher().getStoredHighlightFieldNames();
+      for (String field : fields) {
+        expandWildcardsInHighlightFields(
+            expandedFields,
+            storedHighlightFieldNames,
+            SolrPluginUtils.split(field));
       }
+      fields = expandedFields.toArray(new String[]{});
     }
 
     return fields;
@@ -95,6 +87,25 @@ public abstract class SolrHighlighter
 
   protected boolean emptyArray(String[] arr) {
     return (arr == null || arr.length == 0 || arr[0] == null || arr[0].trim().length() == 0);
+  }
+
+  static private void expandWildcardsInHighlightFields (
+      Set<String> expandedFields,
+      Collection<String> storedHighlightFieldNames,
+      String... fields) {
+    for (String field : fields) {
+      if (field.contains("*")) {
+        // create a Java regular expression from the wildcard string
+        String fieldRegex = field.replaceAll("\\*", ".*");
+        for (String storedFieldName : storedHighlightFieldNames) {
+          if (storedFieldName.matches(fieldRegex)) {
+            expandedFields.add(storedFieldName);
+          }
+        }
+      } else {
+        expandedFields.add(field);
+      }
+    }
   }
 
   /**

@@ -15,7 +15,12 @@
  * limitations under the License.
  */
 
+
 package org.apache.solr.highlight;
+
+
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -23,6 +28,7 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.solr.SolrTestCaseJ4;
 import org.apache.solr.common.params.HighlightParams;
 import org.apache.solr.handler.component.HighlightComponent;
+import org.apache.solr.request.LocalSolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.util.TestHarness;
 import org.junit.After;
@@ -739,6 +745,8 @@ public class HighlighterTest extends SolrTestCaseJ4 {
         "text", "test", // static not stored
         "foo_s", "test", // dynamic stored
         "foo_sI", "test", // dynamic not stored
+        "bar_s", "test", // dynamic stored
+        "bar_sI", "test", // dynamic not stored
         "weight", "1.0")); // stored but not text
     assertU(commit());
     assertU(optimize());
@@ -769,6 +777,25 @@ public class HighlighterTest extends SolrTestCaseJ4 {
     assertEquals("Expected to highlight on field \"foo_s\"", "foo_s",
         highlightFieldNames.get(0));
     request.close();
+
+    // SOLR-5127
+    args.put("hl.fl", (random().nextBoolean() ? "foo_*,bar_*" : "bar_*,foo_*"));
+    lrf = h.getRequestFactory("standard", 0, 10, args);
+    // hl.fl ordering need not be preserved in output
+    final Set<String> highlightedSetExpected = new HashSet<String>();
+    highlightedSetExpected.add("foo_s");
+    highlightedSetExpected.add("bar_s");
+    LocalSolrQueryRequest localRequest = lrf.makeRequest("test");
+    try {
+      highlighter = HighlightComponent.getHighlighter(h.getCore());
+      final Set<String> highlightedSetActual = new HashSet<String>(
+          Arrays.asList(highlighter.getHighlightFields(null,
+              localRequest, new String[] {})));
+      assertEquals(highlightedSetExpected, highlightedSetActual);
+    }
+    finally{
+        if (localRequest != null) localRequest.close();
+    }
   }
 
   @Test
