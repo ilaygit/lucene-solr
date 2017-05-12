@@ -499,6 +499,7 @@ based HashBitset. -->
             attr2="${non.existent.sys.prop:default-from-config}">prefix-${solr.test.sys.prop2}-suffix</propTest>
 
   <queryParser name="foo" class="FooQParserPlugin"/>
+  <queryParser name="rerank" class="org.apache.solr.search.ReRankQParserPlugin"/>
 
   <updateRequestProcessorChain name="dedupe">
     <processor class="org.apache.solr.update.processor.SignatureUpdateProcessorFactory">

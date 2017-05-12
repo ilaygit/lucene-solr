@@ -59,7 +59,7 @@ public class ReRankQParserPlugin extends QParserPlugin {
       if (reRankQueryString == null || reRankQueryString.trim().length() == 0)  {
         throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, RERANK_QUERY+" parameter is mandatory");
       }
-      QParser reRankParser = QParser.getParser(reRankQueryString, req);
+      QParser reRankParser = QParser.getParser(reRankQueryString, null, req);
       Query reRankQuery = reRankParser.parse();
 
       int reRankDocs  = localParams.getInt(RERANK_DOCS, RERANK_DOCS_DEFAULT);
@@ -95,12 +95,19 @@ public class ReRankQParserPlugin extends QParserPlugin {
     final private double reRankWeight;
 
     public int hashCode() {
-      return 31 * classHash() + mainQuery.hashCode()+reRankQuery.hashCode()+(int)reRankWeight+reRankDocs;
+      return mainQuery.hashCode()+reRankQuery.hashCode()+(int)reRankWeight+reRankDocs+(int)getBoost();
     }
 
     public boolean equals(Object other) {
-      return sameClassAs(other) &&
-             equalsTo(getClass().cast(other));
+	  if(other instanceof ReRankQuery) {
+        ReRankQuery rrq = (ReRankQuery)other;
+        return (mainQuery.equals(rrq.mainQuery) &&
+                reRankQuery.equals(rrq.reRankQuery) &&
+                reRankWeight == rrq.reRankWeight &&
+                reRankDocs == rrq.reRankDocs &&
+                getBoost() == rrq.getBoost());
+      }
+      return false;
     }
 
     private boolean equalsTo(ReRankQuery rrq) {
