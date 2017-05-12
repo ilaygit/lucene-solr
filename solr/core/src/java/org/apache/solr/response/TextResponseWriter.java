@@ -301,7 +301,7 @@ public abstract class TextResponseWriter {
     }
 
     if(transformer != null) {
-      if (timer != null && timer.isPaused()){
+      if (timer != null && ! timer.isPaused()){
         timer.pause();
       }
       transformer.setContext( null );
