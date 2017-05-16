@@ -727,15 +727,34 @@ public abstract class BaseDistributedSearchTestCase extends SolrTestCaseJ4 {
 
     String cmp;
     int f = flags(handle, "maxScore");
-    if ((f & SKIPVAL) == 0) {
+    if (f == 0) {
       cmp = compare(a.getMaxScore(), b.getMaxScore(), 0, handle);
       if (cmp != null) return ".maxScore" + cmp;
-    } else {
+    } else if ((f & SKIP) == 0) { // so we skip val but otherwise both should be present
+      assert (f & SKIPVAL) != 0;
       if (b.getMaxScore() != null) {
         if (a.getMaxScore() == null) {
           return ".maxScore missing";
         }
       }
+    }
+
+    cmp = compare(a.getNumFound(), b.getNumFound(), 0, handle);
+    if (cmp != null) return ".numFound" + cmp;
+
+    cmp = compare(a.getStart(), b.getStart(), 0, handle);
+    if (cmp != null) return ".start" + cmp;
+
+    cmp = compare(a.size(), b.size(), 0, handle);
+    if (cmp != null) return ".size()" + cmp;
+
+    // only for completely ordered results (ties might be in a different order)
+    if (ordered) {
+      for (int i = 0; i < a.size(); i++) {
+        cmp = compare(a.get(i), b.get(i), 0, handle);
+        if (cmp != null) return "[" + i + "]" + cmp;
+      }
+      return null;
     }
 
     cmp = compare(a.getNumFound(), b.getNumFound(), 0, handle);
