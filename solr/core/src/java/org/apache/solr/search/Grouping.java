@@ -18,8 +18,10 @@
 package org.apache.solr.search;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -68,7 +70,7 @@ import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.StrFieldSource;
-import org.apache.solr.search.grouping.collector.FilterCollector;
+import org.apache.solr.search.grouping.collector.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -793,12 +795,23 @@ public class Grouping {
       int groupedDocsToCollect = getMax(groupOffset, docsPerGroup, maxDoc);
       groupedDocsToCollect = Math.max(groupedDocsToCollect, 1);
       if (anchorValue == null) {
-        secondPass = new TermSecondPassGroupingCollector(
-            groupBy, topGroups, groupSort, withinGroupSort, groupedDocsToCollect, needScores, needScores, false);
+        if (query instanceof RankQuery){
+            secondPass = new ReRankTermSecondPassGroupingCollector(
+                    groupBy, topGroups, groupSort, withinGroupSort, searcher, (RankQuery)query, groupedDocsToCollect, true,
+                    true, false);
+        } else {
+            secondPass = new TermSecondPassGroupingCollector(
+                groupBy, topGroups, groupSort, withinGroupSort, groupedDocsToCollect, needScores, needScores, false);
+        }
       } else {
+        if (query instanceof RankQuery){
+          secondPass = new ReRankTermSecondPassGroupingCollector(groupBy, topGroups, groupSort, withinGroupSort, searcher, (RankQuery)query, groupedDocsToCollect, true , true, false,
+              anchorForward, FieldAnchorComparator.create(groupSort, anchorValue));
+        } else {
         secondPass = new TermSecondPassGroupingCollector(
             groupBy, topGroups, groupSort, withinGroupSort, groupedDocsToCollect, needScores, needScores, false,
             anchorForward, FieldAnchorComparator.create(groupSort, anchorValue));
+        }
       }
 
       if (totalCount == TotalCount.grouped) {
@@ -824,6 +837,19 @@ public class Grouping {
     @Override
     protected void finish() throws IOException {
       result = secondPass != null ? secondPass.getTopGroups(0) : null;
+      if (result != null && query instanceof RankQuery && groupSort == Sort.RELEVANCE) {
+          // if we are sorting for relevance and query is a RankQuery, it may be that
+          // the order of the groups changed, we need to reorder
+          GroupDocs[] groups = result.groups;
+          Arrays.sort(groups, new Comparator<GroupDocs>() {
+              @Override
+              public int compare(GroupDocs o1, GroupDocs o2) {
+                  if (o1.maxScore > o2.maxScore) return -1;
+                  if (o1.maxScore < o2.maxScore) return 1;
+                  return 0;
+              }
+          });
+      }
       if (main) {
         mainResult = createSimpleResponse();
         return;
@@ -1017,9 +1043,13 @@ public class Grouping {
 
       int groupdDocsToCollect = getMax(groupOffset, docsPerGroup, maxDoc);
       groupdDocsToCollect = Math.max(groupdDocsToCollect, 1);
-      secondPass = new FunctionSecondPassGroupingCollector(
-          topGroups, groupSort, withinGroupSort, groupdDocsToCollect, needScores, needScores, false, groupBy, context
-      );
+      if (query instanceof RankQuery){
+          secondPass = new ReRankFunctionSecondPassGroupingCollector(topGroups, groupSort, withinGroupSort, (RankQuery)query, searcher,
+                  groupdDocsToCollect, true, true, false, groupBy, context);
+      } else {
+          secondPass = new FunctionSecondPassGroupingCollector(
+                  topGroups, groupSort, withinGroupSort, groupdDocsToCollect, needScores, needScores, false, groupBy, context);
+      }
 
       if (totalCount == TotalCount.grouped) {
         allGroupsCollector = new FunctionAllGroupsCollector(groupBy, context);
@@ -1041,6 +1071,20 @@ public class Grouping {
     @Override
     protected void finish() throws IOException {
       result = secondPass != null ? secondPass.getTopGroups(0) : null;
+      if (result != null && query instanceof RankQuery && groupSort == Sort.RELEVANCE) {
+          // if we are sorting for relevance and query is a RankQuery, it may be that
+          // the order of the groups changed, we need to reorder
+          GroupDocs[] groups = result.groups;
+          Arrays.sort(groups, new Comparator<GroupDocs>() {
+              @Override
+              public int compare(GroupDocs o1, GroupDocs o2) {
+                  if (o1.maxScore > o2.maxScore) return -1;
+                  if (o1.maxScore < o2.maxScore) return 1;
+                  return 0;
+              }
+          });
+      }
+
       if (main) {
         mainResult = createSimpleResponse();
         return;

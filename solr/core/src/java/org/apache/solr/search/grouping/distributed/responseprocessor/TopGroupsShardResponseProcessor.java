@@ -33,6 +33,7 @@ import org.apache.solr.handler.component.ShardDoc;
 import org.apache.solr.handler.component.ShardRequest;
 import org.apache.solr.handler.component.ShardResponse;
 import org.apache.solr.search.Grouping;
+import org.apache.solr.search.RankQuery;
 import org.apache.solr.search.grouping.distributed.ShardResponseProcessor;
 import org.apache.solr.search.grouping.distributed.command.QueryCommandResult;
 import org.apache.solr.search.grouping.distributed.shardresultserializer.TopGroupsResultTransformer;
@@ -40,7 +41,9 @@ import org.apache.solr.search.grouping.distributed.shardresultserializer.TopGrou
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -157,6 +160,29 @@ public class TopGroupsShardResponseProcessor implements ShardResponseProcessor {
 
         TopGroups<BytesRef>[] topGroupsArr = new TopGroups[topGroups.size()];
         rb.mergedTopGroups.put(groupField, TopGroups.merge(topGroups.toArray(topGroupsArr), groupSort, sortWithinGroup, groupOffsetDefault, docsPerGroupDefault, TopGroups.ScoreMergeMode.None));
+        if (rb.getRankQuery() != null){
+          TopGroups<BytesRef> group = rb.mergedTopGroups.get(groupField);
+          for (int i = 0; i < group.groups.length; i++){
+            GroupDocs g = group.groups[i];
+            Arrays.sort(g.scoreDocs, new Comparator<ScoreDoc>() {
+              @Override
+              public int compare(ScoreDoc o1, ScoreDoc o2) {
+                if (o1.score > o2.score) return -1;
+                if (o2.score < o1.score) return 1;
+                return 0;
+              }
+            });
+            group.groups[i] = new GroupDocs(g.scoreDocs[0].score, g.scoreDocs[0].score, g.totalHits, g.scoreDocs, g.groupValue, g.groupSortValues);
+          }
+          Arrays.sort(group.groups, new Comparator<GroupDocs<BytesRef>>() {
+            @Override
+            public int compare(GroupDocs<BytesRef> o1, GroupDocs<BytesRef> o2) {
+              if (o1.score > o2.score) return -1;
+              if (o2.score < o1.score) return 1;
+              return 0;
+            }
+          });
+        }
       }
 
       for (String query : commandTopDocs.keySet()) {

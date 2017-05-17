@@ -24,6 +24,7 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.search.ReRankQParserPlugin;
 
 /**
  * TODO? perhaps use:
@@ -50,6 +51,7 @@ public class TestDistributedGrouping extends BaseDistributedSearchTestCase {
 
     handle.clear();
     handle.put("QTime", SKIPVAL);
+    handle.put("maxScore", SKIP); //SOLR-6612
     handle.put("timestamp", SKIPVAL);
     handle.put("grouped", UNORDERED);   // distrib grouping doesn't guarantee order of top level group commands
 
@@ -264,7 +266,13 @@ public class TestDistributedGrouping extends BaseDistributedSearchTestCase {
     
     //Debug
     simpleQuery("q", "*:*", "rows", 10, "fl", "id," + i1, "group", "true", "group.field", i1, "debug", "true");
-  }
+
+    rsp = query("q", "{!func}id", "rows", 100, "fl",  "id," + i1, "group", "true",
+        "group.field", i1, "group.limit", 1, "rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
+            + ReRankQParserPlugin.RERANK_DOCS + "=1000}", "rqq", "{!func }field("+i1+")");
+
+
+ }
 
   private void simpleQuery(Object... queryParams) throws SolrServerException {
     ModifiableSolrParams params = new ModifiableSolrParams();

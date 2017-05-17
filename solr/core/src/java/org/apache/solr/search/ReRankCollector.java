@@ -48,10 +48,20 @@ public class ReRankCollector extends TopDocsCollector<ScoreDoc> {
   final private Map<BytesRef, Integer> boostedPriority;
   final private Rescorer reRankQueryRescorer;
 
+  @Deprecated
   public ReRankCollector(int reRankDocs,
       int length,
       Rescorer reRankQueryRescorer,
       QueryCommand cmd,
+      IndexSearcher searcher,
+      Map<BytesRef, Integer> boostedPriority) throws IOException {
+      this(reRankDocs, length, cmd.getSort(), reRankQueryRescorer, searcher, boostedPriority);
+ }
+
+ public ReRankCollector(int reRankDocs,
+      int length,
+      Sort sort,
+      Rescorer reRankQueryRescorer,
       IndexSearcher searcher,
       Map<BytesRef, Integer> boostedPriority) throws IOException {
     super(null);
@@ -59,12 +69,11 @@ public class ReRankCollector extends TopDocsCollector<ScoreDoc> {
     this.length = length;
     this.boostedPriority = boostedPriority;
     final boolean docsScoredInOrder = true;
-    Sort sort = cmd.getSort();
     if(sort == null) {
       this.mainCollector = TopScoreDocCollector.create(Math.max(this.reRankDocs, length), docsScoredInOrder);
     } else {
       sort = sort.rewrite(searcher);
-      this.mainCollector = TopFieldCollector.create(sort, Math.max(this.reRankDocs, length), false, true, true, docsScoredInOrder);
+      this.mainCollector = TopFieldCollector.create(sort, Math.max(this.reRankDocs, length), true, true, true, docsScoredInOrder);
     }
     this.searcher = searcher;
     this.reRankQueryRescorer = reRankQueryRescorer;
@@ -96,7 +105,7 @@ public class ReRankCollector extends TopDocsCollector<ScoreDoc> {
 
       //Lower howMany to return if we've collected fewer documents.
       howMany = Math.min(howMany, mainScoreDocs.length);
-      
+
       if(boostedPriority != null) {
           // We are not using QueryElevationComponent,so I'm not porting this feature
           throw new UnsupportedOperationException("QueryEvevation component not supported");

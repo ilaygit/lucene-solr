@@ -407,6 +407,11 @@ public class QueryComponent extends SearchComponent
           rb.setResult(result);
           return;
         } else if (params.getBool(GroupParams.GROUP_DISTRIBUTED_SECOND, false)) {
+          RankQuery rq = rb.getRankQuery();
+          if (rq != null){
+            rq = rq.wrap(rb.getQuery());
+          }
+
           CommandHandler.Builder secondPhaseBuilder = new CommandHandler.Builder()
               .setQueryCommand(cmd)
               .setTruncateGroups(groupingSpec.isTruncateGroups() && groupingSpec.getFields().length > 0)
@@ -436,6 +441,8 @@ public class QueryComponent extends SearchComponent
                     .setMaxDocPerGroup(groupingSpec.getGroupOffset() + groupingSpec.getGroupLimit())
                     .setNeedScores(needScores)
                     .setNeedMaxScore(needScores)
+                    .setQuery(rq)
+                    .setSearcher(searcher)
                     .setAnchorForward(cmd.getAnchorForward())
                     .setAnchorValue(cmd.getAnchorValue())
                     .build()

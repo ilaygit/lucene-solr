@@ -18,6 +18,8 @@ package org.apache.solr.search.grouping.distributed.command;
  */
 
 import org.apache.lucene.search.Collector;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.grouping.GroupDocs;
 import org.apache.lucene.search.grouping.SearchGroup;
@@ -26,7 +28,10 @@ import org.apache.lucene.search.grouping.term.FieldAnchorComparator;
 import org.apache.lucene.search.grouping.term.TermSecondPassGroupingCollector;
 import org.apache.lucene.util.BytesRef;
 import org.apache.solr.schema.SchemaField;
+import org.apache.solr.search.RankQuery;
 import org.apache.solr.search.grouping.Command;
+import org.apache.solr.search.grouping.collector.ReRankFunctionSecondPassGroupingCollector;
+import org.apache.solr.search.grouping.collector.ReRankTermSecondPassGroupingCollector;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,9 +55,21 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
     private boolean needMaxScore = false;
     private boolean anchorForward = true;
     private Object anchorValue = null;
+    private Query query;
+    private IndexSearcher searcher;
 
     public Builder setField(SchemaField field) {
       this.field = field;
+      return this;
+    }
+
+    public Builder setQuery(Query query) {
+      this.query = query;
+      return this;
+    }
+
+    public Builder setSearcher(IndexSearcher searcher) {
+      this.searcher = searcher;
       return this;
     }
 
@@ -102,7 +119,7 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
         throw new IllegalStateException("All required fields must be set");
       }
 
-      return new TopGroupsFieldCommand(field, groupSort, sortWithinGroup, firstPhaseGroups, maxDocPerGroup, needScores, needMaxScore,
+      return new TopGroupsFieldCommand(field, groupSort, sortWithinGroup, query, searcher, firstPhaseGroups, maxDocPerGroup, needScores, needMaxScore,
           anchorForward, anchorValue);
     }
 
@@ -117,11 +134,16 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
   private final boolean needMaxScore;
   private boolean anchorForward = true;
   private final Object anchorValue;
+  private final Query query;
+  private final IndexSearcher searcher;
+
   private TermSecondPassGroupingCollector secondPassCollector;
 
   private TopGroupsFieldCommand(SchemaField field,
                                 Sort groupSort,
                                 Sort sortWithinGroup,
+                                Query query,
+                                IndexSearcher searcher,
                                 Collection<SearchGroup<BytesRef>> firstPhaseGroups,
                                 int maxDocPerGroup,
                                 boolean needScores,
@@ -137,6 +159,8 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
     this.needMaxScore = needMaxScore;
     this.anchorForward = anchorForward;
     this.anchorValue = anchorValue;
+    this.query = query;
+    this.searcher = searcher;
   }
 
   @Override
@@ -147,8 +171,13 @@ public class TopGroupsFieldCommand implements Command<TopGroups<BytesRef>> {
 
     List<Collector> collectors = new ArrayList<>(1);
     if (anchorValue == null) {
-      secondPassCollector = new TermSecondPassGroupingCollector(
-          field.getName(), firstPhaseGroups, groupSort, sortWithinGroup, maxDocPerGroup, needScores, needMaxScore, true);
+      if (query instanceof RankQuery){
+        secondPassCollector = new ReRankTermSecondPassGroupingCollector(field.getName(), firstPhaseGroups,
+            groupSort, sortWithinGroup, searcher, (RankQuery)query, maxDocPerGroup,  needScores, needMaxScore, true);
+      } else {
+        secondPassCollector = new TermSecondPassGroupingCollector(
+            field.getName(), firstPhaseGroups, groupSort, sortWithinGroup, maxDocPerGroup, needScores, needMaxScore, true);
+      }
     } else {
       secondPassCollector = new TermSecondPassGroupingCollector(
           field.getName(), firstPhaseGroups, groupSort, sortWithinGroup, maxDocPerGroup, needScores, needMaxScore, true,

@@ -20,6 +20,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TopDocsCollector;
 import org.apache.solr.search.SolrIndexSearcher.QueryCommand;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
 
 import java.io.IOException;
 
@@ -29,7 +30,9 @@ import java.io.IOException;
 
 public abstract class RankQuery extends ExtendedQueryBase {
 
+  @Deprecated
   public abstract TopDocsCollector getTopDocsCollector(int len, QueryCommand cmd, IndexSearcher searcher) throws IOException;
+  public abstract TopDocsCollector getTopDocsCollector(int len, Sort sort, IndexSearcher searcher) throws IOException;
   public abstract RankQuery wrap(Query mainQuery);
 
 }
