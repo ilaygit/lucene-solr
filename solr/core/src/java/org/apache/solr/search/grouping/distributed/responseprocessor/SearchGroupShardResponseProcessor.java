@@ -28,6 +28,8 @@ import org.apache.solr.common.util.SimpleOrderedMap;
 import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.handler.component.ShardRequest;
 import org.apache.solr.handler.component.ShardResponse;
+import org.apache.solr.search.AbstractReRankQuery;
+import org.apache.solr.search.RankQuery;
 import org.apache.solr.search.SortSpec;
 import org.apache.solr.search.grouping.distributed.ShardResponseProcessor;
 import org.apache.solr.search.grouping.distributed.command.SearchGroupsFieldCommandResult;
@@ -147,9 +149,17 @@ public class SearchGroupShardResponseProcessor implements ShardResponseProcessor
       rb.firstPhaseElapsedTime = maxElapsedTime;
       for (String groupField : commandSearchGroups.keySet()) {
         List<Collection<SearchGroup<BytesRef>>> topGroups = commandSearchGroups.get(groupField);
+
+        final int maxSize;
+        RankQuery rq = rb.getRankQuery();
+        if (rq instanceof AbstractReRankQuery){
+          maxSize = ((AbstractReRankQuery) rq).getReRankDocs();
+        } else {
+          maxSize = ss.getCount();
+        }
         final List<SearchGroup<BytesRef>> mergedTopGroups;
         if (anchor == null) {
-          mergedTopGroups = SearchGroup.merge(topGroups, ss.getOffset(), ss.getCount(), groupSort, null);
+          mergedTopGroups = SearchGroup.merge(topGroups, ss.getOffset(), maxSize, groupSort, null);
         } else {
           final Boolean reverseSortList = (anchor.forward ? Boolean.FALSE : Boolean.TRUE);
           final List<SearchGroup<BytesRef>> mergedGroups = SearchGroup.merge(topGroups, 0, null, groupSort, reverseSortList);
@@ -157,7 +167,7 @@ public class SearchGroupShardResponseProcessor implements ShardResponseProcessor
             mergedTopGroups = null;
           } else {
             final Set<BytesRef> excludedGroups = commandExcludedGroups.get(groupField);
-            mergedTopGroups = new ArrayList<>(ss.getCount());
+            mergedTopGroups = new ArrayList<>(maxSize);
 
             final List<SearchGroup<BytesRef>> filteredMergedGroups;
             if (excludedGroups == null || excludedGroups.isEmpty()) {

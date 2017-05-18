@@ -237,5 +237,26 @@ public class TestReRankQParserPlugin extends SolrTestCaseJ4 {
         "//arr/lst[2]/result/doc/float[@name='id'][.='3.0']",
         "//arr/lst[3]/result/doc/float[@name='id'][.='2.0']"
     );
+
+    // Rerank top 3 groups, should not make any difference now:
+    params.remove("rq");
+    params.add("rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
+            + ReRankQParserPlugin.RERANK_DOCS + "=3}");
+
+    assertQ(req(params),
+            "//arr/lst[1]/result/doc/float[@name='id'][.='5.0']",
+            "//arr/lst[2]/result/doc/float[@name='id'][.='3.0']",
+            "//arr/lst[3]/result/doc/float[@name='id'][.='2.0']"
+    );
+
+    // .. But if we rerank only the first 2 groups, results must be different
+    // Rerank top 3 groups, should not make any difference now:
+    params.remove("rq");
+    params.add("rq", "{!" + ReRankQParserPlugin.NAME + " " + ReRankQParserPlugin.RERANK_QUERY + "=$rqq "
+            + ReRankQParserPlugin.RERANK_DOCS + "=2}");
+    assertQ(req(params),
+            "//arr/lst[1]/result/doc/float[@name='id'][.='3.0']",
+            "//arr/lst[2]/result/doc/float[@name='id'][.='2.0']");
+
   }
 }

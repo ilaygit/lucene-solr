@@ -123,6 +123,7 @@ public class Grouping {
 
 
   public DocList mainResult;  // output if one of the grouping commands should be used as the main result.
+  private int reRankGroups;   // number of groups to rerank in case of grouping + reranking
 
   /**
    * @param cacheSecondPassSearch    Whether to cache the documents and scores from the first pass search for the second
@@ -514,6 +515,10 @@ public class Grouping {
     return signalCacheWarning;
   }
 
+  public void reRankGroups(int reRankDocs) {
+    this.reRankGroups = reRankDocs;
+  }
+
   //======================================   Inner classes =============================================================
 
   public static enum Format {
@@ -570,7 +575,13 @@ public class Grouping {
      *
      * @throws IOException If I/O related errors occur
      */
-    protected abstract void prepare() throws IOException;
+    protected void prepare() throws IOException {
+      if (reRankGroups > 0){
+        actualGroupsToFind = getMax(offset, Math.max(numGroups, reRankGroups), maxDoc);
+      } else {
+        actualGroupsToFind = getMax(offset, numGroups, maxDoc);
+      }
+    }
 
     /**
      * Returns one or more {@link Collector} instances that are needed to perform the first pass search.
@@ -741,14 +752,6 @@ public class Grouping {
      * {@inheritDoc}
      */
     @Override
-    protected void prepare() throws IOException {
-      actualGroupsToFind = getMax(offset, numGroups, maxDoc);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     protected Collector createFirstPassCollector() throws IOException {
       // Ok we don't want groups, but do want a total count
       if (actualGroupsToFind <= 0) {
@@ -771,6 +774,12 @@ public class Grouping {
      */
     @Override
     protected Collector createSecondPassCollector() throws IOException {
+
+      // in case of reranking we will retrieve reRankDocs groups instead of what we
+      // want to display (i.e., rows), so here we we are restricting down to what we want
+      // to display.
+      actualGroupsToFind = getMax(offset, numGroups, maxDoc);
+
       if (actualGroupsToFind <= 0) {
         allGroupsCollector = new TermAllGroupsCollector(groupBy);
         return totalCount == TotalCount.grouped ? allGroupsCollector : null;
@@ -872,6 +881,13 @@ public class Grouping {
       // handle case of rows=0
       if (numGroups == 0) return;
 
+      result = new TopGroups(groupSort.getSort(),
+                             withinGroupSort.getSort(),
+                             result.totalHitCount,
+                             result.totalGroupedHitCount,
+                             Arrays.copyOfRange(result.groups, 0, Math.min(result.groups.length, limitDefault)),
+                             maxScore);
+
       for (GroupDocs<BytesRef> group : result.groups) {
         NamedList nl = new SimpleOrderedMap();
         groupList.add(nl);                         // grouped={ key={ groups=[ {
@@ -924,14 +940,6 @@ public class Grouping {
     public Query query;
     TopDocsCollector topCollector;
     FilterCollector collector;
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void prepare() throws IOException {
-      actualGroupsToFind = getMax(offset, numGroups, maxDoc);
-    }
 
     /**
      * {@inheritDoc}
@@ -998,9 +1006,9 @@ public class Grouping {
      */
     @Override
     protected void prepare() throws IOException {
+      super.prepare();
       Map context = ValueSource.newContext(searcher);
       groupBy.createWeight(context, searcher);
-      actualGroupsToFind = getMax(offset, numGroups, maxDoc);
     }
 
     /**
@@ -1083,8 +1091,14 @@ public class Grouping {
                   return 0;
               }
           });
-      }
 
+        result = new TopGroups(groupSort.getSort(),
+                withinGroupSort.getSort(),
+                result.totalHitCount,
+                result.totalGroupedHitCount,
+                Arrays.copyOfRange(result.groups, 0, Math.min(result.groups.length, limitDefault)),
+                maxScore);
+      }
       if (main) {
         mainResult = createSimpleResponse();
         return;

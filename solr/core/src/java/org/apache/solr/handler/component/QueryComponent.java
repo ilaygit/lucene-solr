@@ -49,6 +49,7 @@ import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
+import org.apache.solr.search.AbstractReRankQuery;
 import org.apache.solr.search.CursorMark;
 import org.apache.solr.search.DocIterator;
 import org.apache.solr.search.DocList;
@@ -385,11 +386,20 @@ public class QueryComponent extends SearchComponent
               .setIncludeHitCount(true)
               .setSearcher(searcher);
 
+
+          final int topNGroups;
+          Query query = cmd.getQuery();
+          if (query instanceof AbstractReRankQuery){
+            topNGroups = cmd.getOffset() + ((AbstractReRankQuery)query).getReRankDocs();
+          } else {
+            topNGroups = cmd.getOffset() + cmd.getLen();
+          }
+
           for (String field : groupingSpec.getFields()) {
             topsGroupsActionBuilder.addCommandField(new SearchGroupsFieldCommand.Builder()
                 .setField(searcher.getSchema().getField(field))
                 .setGroupSort(groupingSpec.getGroupSort())
-                .setTopNGroups(cmd.getOffset() + cmd.getLen())
+                .setTopNGroups(topNGroups)
                 .setIncludeGroupCount(groupingSpec.isIncludeGroupCount())
                 .setAnchorForward(cmd.getAnchorForward())
                 .setAboveAnchorCount(cmd.getAboveAnchorCount())
@@ -486,6 +496,10 @@ public class QueryComponent extends SearchComponent
             .setDocsPerGroupDefault(groupingSpec.getGroupLimit())
             .setGroupOffsetDefault(groupingSpec.getGroupOffset())
             .setGetGroupedDocSet(groupingSpec.isTruncateGroups());
+
+        if (cmd.getQuery() instanceof AbstractReRankQuery){
+          grouping.reRankGroups(((AbstractReRankQuery)cmd.getQuery()).getReRankDocs());
+        }
 
         if (groupingSpec.getFields() != null) {
           for (String field : groupingSpec.getFields()) {

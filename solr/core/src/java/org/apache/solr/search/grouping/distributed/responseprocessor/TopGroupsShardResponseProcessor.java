@@ -182,6 +182,9 @@ public class TopGroupsShardResponseProcessor implements ShardResponseProcessor {
               return 0;
             }
           });
+          int topN = Math.min(group.groups.length, rb.getQueryCommand().getLen());
+          group = new TopGroups<BytesRef>(group.groupSort, group.withinGroupSort, group.totalHitCount, group.totalGroupedHitCount, Arrays.copyOfRange(group.groups, 0, topN), group.maxScore);
+          rb.mergedTopGroups.put(groupField, group);
         }
       }
 
