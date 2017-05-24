@@ -206,7 +206,6 @@ class PerSegmentFaceting {
         }
         while(
                 (seg.pos < seg.endTermIndex())  //stop incrementing before we run off the end
-                        && (seg.termsEnum().next() != null || true) //move term enum forward with position -- dont care about value
                         && (mincount > 0) //only skip ahead if mincount > 0
                         && (seg.counts[seg.pos - seg.startTermIndex()] == 0) //check zero count
                 );
@@ -215,6 +214,7 @@ class PerSegmentFaceting {
           queue.pop();
           seg = queue.top();
         }  else {
+          seg.termsEnum().seekExact(seg.pos);
           seg.tempBR = seg.termsEnum().term();
           seg = queue.updateTop();
         }
