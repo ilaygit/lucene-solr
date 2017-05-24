@@ -169,7 +169,7 @@ class PerSegmentFaceting {
         } else {
           seg.setPos(seg.startTermIndex());
         }
-        if (seg.pos() < seg.endTermIndex()) {
+        if (seg.pos() < seg.endTermIndex() && (mincount < 1 || seg.hasAnyCount)) {
           seg.initTermsEnum();
           seg.termsEnum().seekExact(seg.pos());
           seg.setTempBR(seg.termsEnum().term());
@@ -247,9 +247,15 @@ class PerSegmentFaceting {
     AtomicReaderContext context;
     SegFacet(AtomicReaderContext context) {
       this.context = context;
+      hasAnyCount = false;
     }
 
     int[] counts;
+
+    //whether this segment has any non-zero term counts
+    //used to ignore insignificant segments when mincount>0
+    //initialize to false so that by default we will assume segments have counts
+    boolean hasAnyCount;
 
     int pos; // only used when merging
     TermsEnum tenum; // only used when merging
@@ -335,21 +341,25 @@ class PerSegmentFaceting {
         DocIdSet idSet = baseSet.getDocIdSet(context(), null);  // this set only includes live docs
         DocIdSetIterator iter = idSet.iterator();
 
-
         ////
         int doc;
 
         if (prefix==null) {
           // specialized version when collecting counts for all terms
           while ((doc = iter.nextDoc()) < DocIdSetIterator.NO_MORE_DOCS) {
-            counts[1+si.getOrd(doc)]++;
+            final int t = 1 + si.getOrd(doc);
+            hasAnyCount = hasAnyCount || t > 0;
+            counts[t]++;
           }
         } else {
           // version that adjusts term numbers because we aren't collecting the full range
           while ((doc = iter.nextDoc()) < DocIdSetIterator.NO_MORE_DOCS) {
             int term = si.getOrd(doc);
             int arrIdx = term-startTermIndex;
-            if (arrIdx>=0 && arrIdx<nTerms) counts[arrIdx]++;
+            if (arrIdx>=0 && arrIdx<nTerms) {
+              counts[arrIdx]++;
+              hasAnyCount = true;
+            }
           }
         }
 
@@ -431,6 +441,7 @@ class PerSegmentFaceting {
           while ((ord = si.nextOrd()) != SortedSetDocValues.NO_MORE_ORDS) {
             assert(ord > Integer.MIN_VALUE && ord < Integer.MAX_VALUE);
             counts[(int) (1 + ord)]++;
+            hasAnyCount = true;
           }
         }
         setCounts(counts);
