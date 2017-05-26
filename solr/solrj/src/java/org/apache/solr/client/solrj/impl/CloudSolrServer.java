@@ -265,10 +265,6 @@ public class CloudSolrServer extends SolrServer {
     this.parallelUpdates = parallelUpdates;
   }
 
-  public void setDirectUpdateToLeadersOnly(boolean directeUpdateToLeadersOnly) {
-    this.directUpdatesToLeadersOnly = directeUpdateToLeadersOnly;
-  }
-
   private NamedList directUpdate(AbstractUpdateRequest request, ClusterState clusterState) throws SolrServerException {
     UpdateRequest updateRequest = (UpdateRequest) request;
     ModifiableSolrParams params = (ModifiableSolrParams) request.getParams();
