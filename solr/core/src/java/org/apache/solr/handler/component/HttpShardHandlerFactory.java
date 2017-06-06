@@ -75,6 +75,8 @@ public class HttpShardHandlerFactory extends ShardHandlerFactory implements org.
   int maximumPoolSize = Integer.MAX_VALUE;
   int keepAliveTime = 5;
   int queueSize = -1;
+  int   permittedLoadBalancerRequestsMinimumAbsolute = 0;
+  float permittedLoadBalancerRequestsMaximumFraction = 1.0f;
   boolean accessPolicy = false;
 
   private String scheme = null;
@@ -98,6 +100,12 @@ public class HttpShardHandlerFactory extends ShardHandlerFactory implements org.
   // If the threadpool uses a backing queue, what is its maximum size (-1) to use direct handoff
   static final String INIT_SIZE_OF_QUEUE = "sizeOfQueue";
 
+  // The minimum number of replicas that may be used
+  static final String LOAD_BALANCER_REQUESTS_MIN_ABSOLUTE = "loadBalancerRequestsMinimumAbsolute";
+
+  // The maximum proportion of replicas to be used
+  static final String LOAD_BALANCER_REQUESTS_MAX_FRACTION = "loadBalancerRequestsMaximumFraction";
+
   // Configure if the threadpool favours fairness over throughput
   static final String INIT_FAIRNESS_POLICY = "fairnessPolicy";
 
@@ -118,12 +126,14 @@ public class HttpShardHandlerFactory extends ShardHandlerFactory implements org.
 
   @Override
   public void init(PluginInfo info) {
+    StringBuilder sb = new StringBuilder();
     NamedList args = info.initArgs;
     this.soTimeout = getParameter(args, HttpClientUtil.PROP_SO_TIMEOUT, soTimeout);
     this.scheme = getParameter(args, INIT_URL_SCHEME, null);
     if(StringUtils.endsWith(this.scheme, "://")) {
       this.scheme = StringUtils.removeEnd(this.scheme, "://");
     }
+
     this.connectionTimeout = getParameter(args, HttpClientUtil.PROP_CONNECTION_TIMEOUT, connectionTimeout);
     this.maxConnectionsPerHost = getParameter(args, HttpClientUtil.PROP_MAX_CONNECTIONS_PER_HOST, maxConnectionsPerHost);
     this.maxConnections = getParameter(args, HttpClientUtil.PROP_MAX_CONNECTIONS, maxConnections);
@@ -132,7 +142,15 @@ public class HttpShardHandlerFactory extends ShardHandlerFactory implements org.
     this.keepAliveTime = getParameter(args, MAX_THREAD_IDLE_TIME, keepAliveTime);
     this.queueSize = getParameter(args, INIT_SIZE_OF_QUEUE, queueSize);
     this.accessPolicy = getParameter(args, INIT_FAIRNESS_POLICY, accessPolicy);
-    
+    this.permittedLoadBalancerRequestsMinimumAbsolute = getParameter(
+        args,
+        LOAD_BALANCER_REQUESTS_MIN_ABSOLUTE,
+        permittedLoadBalancerRequestsMinimumAbsolute);
+    this.permittedLoadBalancerRequestsMaximumFraction = getParameter(
+        args,
+        LOAD_BALANCER_REQUESTS_MAX_FRACTION,
+        permittedLoadBalancerRequestsMaximumFraction);
+
     // magic sysprop to make tests reproducible: set by SolrTestCaseJ4.
     String v = System.getProperty("tests.shardhandler.randomSeed");
     if (v != null) {
@@ -207,7 +225,15 @@ public class HttpShardHandlerFactory extends ShardHandlerFactory implements org.
    */
   public LBHttpSolrServer.Rsp makeLoadBalancedRequest(final QueryRequest req, List<String> urls)
     throws SolrServerException, IOException {
-    return loadbalancer.request(new LBHttpSolrServer.Req(req, urls));
+    return loadbalancer.request(newLBHttpSolrServerReq(req, urls));
+  }
+
+  protected LBHttpSolrServer.Req newLBHttpSolrServerReq(final QueryRequest req, List<String> urls) {
+    int numServersToTry = (int)Math.floor(urls.size() * this.permittedLoadBalancerRequestsMaximumFraction);
+    if (numServersToTry < this.permittedLoadBalancerRequestsMinimumAbsolute) {
+      numServersToTry = this.permittedLoadBalancerRequestsMinimumAbsolute;
+    }
+    return new LBHttpSolrServer.Req(req, urls, numServersToTry);
   }
 
   /**

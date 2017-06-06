@@ -167,11 +167,17 @@ public class LBHttpSolrServer extends SolrServer {
     protected SolrRequest request;
     protected List<String> servers;
     protected int numDeadServersToTry;
+    private final Integer numServersToTry;
 
     public Req(SolrRequest request, List<String> servers) {
+        this(request, servers, null);
+    }
+
+    public Req(SolrRequest request, List<String> servers, Integer numServersToTry) {
       this.request = request;
       this.servers = servers;
       this.numDeadServersToTry = servers.size();
+      this.numServersToTry = numServersToTry;
     }
 
     public SolrRequest getRequest() {
@@ -190,6 +196,10 @@ public class LBHttpSolrServer extends SolrServer {
      * Defaults to the number of servers in this request. */
     public void setNumDeadServersToTry(int numDeadServersToTry) {
       this.numDeadServersToTry = numDeadServersToTry;
+    }
+
+    public Integer getNumServersToTry() {
+        return numServersToTry;
     }
   }
 
@@ -287,6 +297,9 @@ public class LBHttpSolrServer extends SolrServer {
     boolean isUpdate = req.request instanceof IsUpdateRequest;
     List<ServerWrapper> skipped = null;
 
+    final Integer numServersToTry = req.getNumServersToTry();
+    int numServersTried = 0;
+
     long timeAllowedNano = getTimeAllowedInNanos(req.getRequest());
     long timeOutTime = System.nanoTime() + timeAllowedNano;
     for (String serverStr : req.getServers()) {
@@ -311,9 +324,14 @@ public class LBHttpSolrServer extends SolrServer {
         }
         continue;
       }
+
+      if (numServersToTry != null && numServersTried > numServersToTry.intValue()) {
+        break;
+      }
+
       rsp.server = serverStr;
       HttpSolrServer server = makeServer(serverStr);
-
+      ++numServersTried;
       ex = doRequest(server, req, rsp, isUpdate, false, null);
       if (ex == null) {
         return rsp; // SUCCESS
@@ -327,18 +345,29 @@ public class LBHttpSolrServer extends SolrServer {
           break;
         }
 
+        if (numServersToTry != null && numServersTried > numServersToTry.intValue()) {
+            break;
+        }
+
         ex = doRequest(wrapper.solrServer, req, rsp, isUpdate, true, wrapper.getKey());
+        ++numServersTried;
         if (ex == null) {
           return rsp; // SUCCESS
         }
       }
     }
 
+    String solrServerExceptionMessage = "No live SolrServers available to handle this request:";
+    if (numServersToTry != null && numServersTried > numServersToTry.intValue()) {
+        solrServerExceptionMessage = "No live SolrServers available to handle this request:"
+            + " numServersTried="+numServersTried
+            + " numServersToTry="+ numServersToTry.intValue();
+    }
 
     if (ex == null) {
-      throw new SolrServerException("No live SolrServers available to handle this request");
+      throw new SolrServerException(solrServerExceptionMessage);
     } else {
-      throw new SolrServerException("No live SolrServers available to handle this request:" + zombieServers.keySet(), ex);
+      throw new SolrServerException(solrServerExceptionMessage + zombieServers.keySet(), ex);
     }
 
   }
@@ -485,10 +514,16 @@ public class LBHttpSolrServer extends SolrServer {
   @Override
   public NamedList<Object> request(final SolrRequest request)
           throws SolrServerException, IOException {
+          return request(request, null);
+  }
+
+  public NamedList<Object> request(final SolrRequest request, final Integer numServersToTry)
+          throws SolrServerException, IOException {
     Exception ex = null;
     ServerWrapper[] serverList = aliveServerList;
     
-    int maxTries = serverList.length;
+    final int maxTries = (numServersToTry == null ? serverList.length : numServersToTry.intValue());
+    int numServersTried = 0;
     Map<String,ServerWrapper> justFailed = null;
 
     long timeAllowedNano = getTimeAllowedInNanos(request);
@@ -503,6 +538,7 @@ public class LBHttpSolrServer extends SolrServer {
       wrapper.lastUsed = System.currentTimeMillis();
 
       try {
+        ++numServersTried;
         return wrapper.solrServer.request(request);
       } catch (SolrException e) {
         // Server is alive but the request was malformed or invalid
@@ -530,6 +566,7 @@ public class LBHttpSolrServer extends SolrServer {
 
       if (wrapper.standard==false || justFailed!=null && justFailed.containsKey(wrapper.getKey())) continue;
       try {
+        ++numServersTried;
         NamedList<Object> rsp = wrapper.solrServer.request(request);
         // remove from zombie list *before* adding to alive to avoid a race that could lose a server
         zombieServers.remove(wrapper.getKey());
@@ -550,13 +587,19 @@ public class LBHttpSolrServer extends SolrServer {
       }
     }
 
+    String solrServerExceptionMessage = "No live SolrServers available to handle this request:";
+    if (numServersToTry != null && numServersTried > numServersToTry.intValue()) {
+        solrServerExceptionMessage = "No live SolrServers available to handle this request:"
+            + " numServersTried="+numServersTried
+            + " numServersToTry="+ numServersToTry.intValue();
+    }
 
     if (ex == null) {
-      throw new SolrServerException("No live SolrServers available to handle this request");
+      throw new SolrServerException(solrServerExceptionMessage);
     } else {
-      throw new SolrServerException("No live SolrServers available to handle this request", ex);
+      throw new SolrServerException(solrServerExceptionMessage, ex);
     }
-  }
+ }
   
   /**
    * @return time allowed in nanos, returns -1 if no time_allowed is specified.
