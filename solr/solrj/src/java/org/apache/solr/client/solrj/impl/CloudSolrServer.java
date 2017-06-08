@@ -330,9 +330,7 @@ public class CloudSolrServer extends SolrServer {
         responseFutures.put(url, threadPool.submit(new Callable<NamedList<?>>() {
           @Override
           public NamedList<?> call() throws Exception {
-            LBHttpSolrServer.Rsp rsp = lbServer.request(lbRequest);
-            rsp.getResponse().add("serverAddress", rsp.getServer());
-            return rsp.getResponse();
+            return lbServer.request(lbRequest).getResponse();
           }
         }));
       }
@@ -358,9 +356,8 @@ public class CloudSolrServer extends SolrServer {
         String url = entry.getKey();
         LBHttpSolrServer.Req lbRequest = entry.getValue();
         try {
-          LBHttpSolrServer.Rsp rsp = lbServer.request(lbRequest);
-          rsp.getResponse().add("serverAddress", rsp.getServer());
-          shardResponses.add(url, rsp.getResponse());
+          NamedList rsp = lbServer.request(lbRequest).getResponse();
+          shardResponses.add(url, rsp);
         } catch (Exception e) {
           throw new SolrServerException(e);
         }
@@ -391,7 +388,6 @@ public class CloudSolrServer extends SolrServer {
       LBHttpSolrServer.Req req = new LBHttpSolrServer.Req(nonRoutableRequest, urlList);
       try {
         LBHttpSolrServer.Rsp rsp = lbServer.request(req);
-        rsp.getResponse().add("serverAddress", rsp.getServer());
         shardResponses.add(urlList.get(0), rsp.getResponse());
       } catch (Exception e) {
         throw new SolrException(ErrorCode.SERVER_ERROR, urlList.get(0), e);
@@ -648,7 +644,6 @@ public class CloudSolrServer extends SolrServer {
     
     LBHttpSolrServer.Req req = new LBHttpSolrServer.Req(request, theUrlList);
     LBHttpSolrServer.Rsp rsp = lbServer.request(req);
-    rsp.getResponse().add("serverAddress", rsp.getServer());
     return rsp.getResponse();
   }
 
