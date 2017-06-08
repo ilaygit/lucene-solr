@@ -50,8 +50,6 @@ public class BBCoreParser extends CoreParser {
   protected BBCoreParser(String defaultField, Analyzer analyzer, QueryParser parser) {
     super(defaultField, analyzer, parser);
 
-    queryFactory.addBuilder("DisjunctionMaxQuery", new BBDisjunctionMaxQueryBuilder(queryFactory));
-
     this.tfBuildersWrapper = new TermFreqBuildersWrapper(defaultField, analyzer, this);
     
     queryFactory.addBuilder("BooleanQuery", new BBBooleanQueryBuilder(queryFactory));
