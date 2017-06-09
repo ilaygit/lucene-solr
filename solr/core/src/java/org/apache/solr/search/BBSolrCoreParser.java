@@ -29,7 +29,6 @@ import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.search.xml.BoostedQueryBuilder;
 import org.apache.solr.search.xml.RangeFilterBuilder;
 import org.apache.solr.search.xml.RangeQueryBuilder;
-import org.apache.solr.search.xml.WildcardQueryBuilder;
 import org.apache.solr.util.plugin.NamedListInitializedPlugin;
 
 /**
@@ -49,8 +48,6 @@ public class BBSolrCoreParser extends BBCoreParser implements NamedListInitializ
 
     queryFactory.addBuilder("RangeQuery", new RangeQueryBuilder(schema));
     filterFactory.addBuilder("RangeFilter", new RangeFilterBuilder(schema));
-
-    queryFactory.addBuilder("WildcardQuery", new WildcardQueryBuilder(schema));
 
     queryFactory.addBuilder("BoostedQuery", new BoostedQueryBuilder(this, req));
   }
