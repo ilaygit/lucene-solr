@@ -55,7 +55,6 @@ public class BBCoreParser extends CoreParser {
     queryFactory.addBuilder("BooleanQuery", new BBBooleanQueryBuilder(queryFactory));
     filterFactory.addBuilder("BooleanFilter", new BBBooleanFilterBuilder(filterFactory));
 
-    queryFactory.addBuilder("PhraseQuery", new PhraseQueryBuilder(analyzer));
     //GenericTextQuery is a error tolerant version of PhraseQuery
     queryFactory.addBuilder("GenericTextQuery", new GenericTextQueryBuilder(analyzer));
     
