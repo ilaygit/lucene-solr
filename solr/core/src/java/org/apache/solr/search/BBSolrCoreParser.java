@@ -25,9 +25,6 @@ import org.apache.lucene.queryparser.xml.QueryBuilder;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.request.SolrQueryRequest;
-import org.apache.solr.schema.IndexSchema;
-import org.apache.solr.search.xml.RangeFilterBuilder;
-import org.apache.solr.search.xml.RangeQueryBuilder;
 import org.apache.solr.util.plugin.NamedListInitializedPlugin;
 
 /**
@@ -42,11 +39,6 @@ public class BBSolrCoreParser extends BBCoreParser implements NamedListInitializ
       SolrQueryRequest req) {
     super(defaultField, analyzer);
     this.req = req;
-
-    final IndexSchema schema = req.getSchema();
-
-    queryFactory.addBuilder("RangeQuery", new RangeQueryBuilder(schema));
-    filterFactory.addBuilder("RangeFilter", new RangeFilterBuilder(schema));
   }
 
   @Override
