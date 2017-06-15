@@ -52,9 +52,6 @@ public class BBCoreParser extends CoreParser {
 
     this.tfBuildersWrapper = new TermFreqBuildersWrapper(defaultField, analyzer, this);
     
-    queryFactory.addBuilder("BooleanQuery", new BBBooleanQueryBuilder(queryFactory));
-    filterFactory.addBuilder("BooleanFilter", new BBBooleanFilterBuilder(filterFactory));
-
     //GenericTextQuery is a error tolerant version of PhraseQuery
     queryFactory.addBuilder("GenericTextQuery", new GenericTextQueryBuilder(analyzer));
     
