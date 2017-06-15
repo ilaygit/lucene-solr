@@ -52,9 +52,6 @@ public class BBCoreParser extends CoreParser {
 
     this.tfBuildersWrapper = new TermFreqBuildersWrapper(defaultField, analyzer, this);
     
-    //GenericTextQuery is a error tolerant version of PhraseQuery
-    queryFactory.addBuilder("GenericTextQuery", new GenericTextQueryBuilder(analyzer));
-    
     queryFactory.addBuilder("NearQuery", new NearQueryBuilder(queryFactory));
     queryFactory.addBuilder("NearFirstQuery", new NearFirstQueryBuilder(queryFactory));
     queryFactory.addBuilder("WildcardNearQuery", new WildcardNearQueryBuilder(analyzer));
