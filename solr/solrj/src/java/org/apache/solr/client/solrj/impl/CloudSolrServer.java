@@ -114,7 +114,14 @@ public class CloudSolrServer extends SolrServer {
 
   }
 
-
+  /**
+   * Used to ease transition to Solr 6.x where LBHttpSolrServer has been renamed
+   * to LBHttpSolrClient See {@link LBHttpSolrClient} and
+   * {@link CloudSolrClient} (the class that overrides this method.
+   */
+  protected LBHttpSolrServer newLbHttpSolrServer(HttpClient client) {
+    return new LBHttpSolrServer(client);
+  }
 
   /**
    * @param zkHost The client endpoint of the zookeeper quorum containing the cloud state,
@@ -123,7 +130,7 @@ public class CloudSolrServer extends SolrServer {
   public CloudSolrServer(String zkHost) {
       this.zkHost = zkHost;
       this.myClient = HttpClientUtil.createClient(null);
-      this.lbServer = new LBHttpSolrServer(myClient);
+      this.lbServer = newLbHttpSolrServer(myClient);
       this.lbServer.setRequestWriter(new BinaryRequestWriter());
       this.lbServer.setParser(new BinaryResponseParser());
       this.updatesToLeaders = true;
@@ -134,7 +141,7 @@ public class CloudSolrServer extends SolrServer {
       throws MalformedURLException {
     this.zkHost = zkHost;
     this.myClient = HttpClientUtil.createClient(null);
-    this.lbServer = new LBHttpSolrServer(myClient);
+    this.lbServer = newLbHttpSolrServer(myClient);
     this.lbServer.setRequestWriter(new BinaryRequestWriter());
     this.lbServer.setParser(new BinaryResponseParser());
     this.updatesToLeaders = updatesToLeaders;
@@ -169,7 +176,8 @@ public class CloudSolrServer extends SolrServer {
   public ResponseParser getParser() {
     return lbServer.getParser();
   }
-  
+ 
+
   /**
    * Note: This setter method is <b>not thread-safe</b>.
    * 
