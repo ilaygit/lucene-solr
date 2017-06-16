@@ -26,8 +26,6 @@ import org.apache.lucene.queryparser.xml.builders.*;
  */
 public class BBCoreParser extends CoreParser {
 
-  final private TermFreqBuildersWrapper tfBuildersWrapper;
-
   /**
    * Construct an XML parser that uses a single instance QueryParser for handling
    * UserQuery tags - all parse operations are synchronized on this parser
@@ -49,8 +47,5 @@ public class BBCoreParser extends CoreParser {
 
   protected BBCoreParser(String defaultField, Analyzer analyzer, QueryParser parser) {
     super(defaultField, analyzer, parser);
-
-    this.tfBuildersWrapper = new TermFreqBuildersWrapper(defaultField, analyzer, this);
-
   }
 }
