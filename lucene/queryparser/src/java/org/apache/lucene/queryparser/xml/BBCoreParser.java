@@ -52,8 +52,6 @@ public class BBCoreParser extends CoreParser {
 
     this.tfBuildersWrapper = new TermFreqBuildersWrapper(defaultField, analyzer, this);
     
-    queryFactory.addBuilder("NearQuery", new NearQueryBuilder(queryFactory));
-    queryFactory.addBuilder("NearFirstQuery", new NearFirstQueryBuilder(queryFactory));
     queryFactory.addBuilder("WildcardNearQuery", new WildcardNearQueryBuilder(analyzer));
 
   }
