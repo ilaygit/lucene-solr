@@ -15,5 +15,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
+<!-- deprecated in favour of solr/contrib/queryparser-bbnews equivalent -->
 <!-- Multi term TermQuery which should fail. TermQuery is used for term which should result in just one and only one TermQuery -->
 <TermQuery fieldName="contents">sumitomo come home</TermQuery>

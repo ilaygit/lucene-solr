@@ -15,5 +15,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
+<!-- deprecated in favour of solr/contrib/queryparser-bbnews equivalent -->
 <!-- this look like a single term. But the Standard analyser would break this into two terms due to the presence of stop word (hyphen) in the middle-->
 <TermsQuery fieldName="contents">BFIM-SOVAC</TermsQuery>

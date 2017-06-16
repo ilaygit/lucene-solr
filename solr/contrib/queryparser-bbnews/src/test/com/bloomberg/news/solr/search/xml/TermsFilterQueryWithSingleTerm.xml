@@ -15,6 +15,24 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<!-- deprecated in favour of solr/contrib/queryparser-bbnews equivalent -->
-<!-- TermsQuery with only the stop words will effectively run down to an empty query and will produce a MatchAllDocument Query-->
-<TermsQuery fieldName="contents">and to a</TermsQuery>
+<FilteredQuery>
+	<Query>
+		<MatchAllDocsQuery/>
+	</Query>
+	<Filter>
+		<!-- TermsFilter uses an analyzer to tokenize Field text and creates a filter for docs which 
+			have ANY of the supplied terms. Unlike a RangeFilter this can be used for filtering on 
+			multiple terms that are not necessarily in a sequence. An example might be a list of primary
+			keys from a database query result or perhaps a choice of "category" labels picked by the end 
+			user.
+			As a filter, this is much faster than the equivalent query (a BooleanQuery with many 
+			"should" TermQueries)
+			
+			This example is just one date to test whether it works with one term
+		-->
+		<TermsFilter fieldName="date">			
+			19870601
+		</TermsFilter> 
+	</Filter>
+	
+</FilteredQuery>

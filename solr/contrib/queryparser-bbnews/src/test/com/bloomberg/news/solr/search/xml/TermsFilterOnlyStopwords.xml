@@ -15,6 +15,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<!-- deprecated in favour of solr/contrib/queryparser-bbnews equivalent -->
-<!-- TermsQuery with only the stop words will effectively run down to an empty query and will produce a MatchAllDocument Query-->
-<TermsQuery fieldName="contents">and to a</TermsQuery>
+<FilteredQuery>
+	<Query>
+		<MatchAllDocsQuery/>
+	</Query>
+	<Filter>
+		<!-- Terms filter with stop words. But the Standard analyser will remove these terms and will result in MatchAllDocsFilter -->
+		<TermsFilter fieldName="contents">			
+			and to
+		</TermsFilter> 
+	</Filter>
+</FilteredQuery>

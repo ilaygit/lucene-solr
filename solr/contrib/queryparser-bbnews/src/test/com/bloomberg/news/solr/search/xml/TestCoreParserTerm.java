@@ -1,4 +1,4 @@
-package org.apache.lucene.queryparser.xml;
+package com.bloomberg.news.solr.search.xml;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -19,16 +19,18 @@ package org.apache.lucene.queryparser.xml;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.queryparser.xml.builders.TermFreqBuildersWrapper;
+import org.apache.lucene.queryparser.xml.CoreParser;
+import org.apache.lucene.queryparser.xml.ParserException;
+import org.apache.lucene.queryparser.xml.TestCoreParser;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
 import java.io.IOException;
+import java.io.InputStream;
 
-@Deprecated // in favour of solr/contrib/queryparser-bbnews equivalent
-public class TestBBCoreParserTerm extends TestCoreParser {
+public class TestCoreParserTerm extends TestCoreParser {
 
   private class CoreParserTerm extends CoreParser {
     final private TermFreqBuildersWrapper tfBuildersWrapper;
@@ -36,7 +38,7 @@ public class TestBBCoreParserTerm extends TestCoreParser {
       super(defaultField, analyzer);
 
       // the builders to be tested
-      this.tfBuildersWrapper = new TermFreqBuildersWrapper(defaultField, analyzer, this);
+      this.tfBuildersWrapper = new TermFreqBuildersWrapper(defaultField, analyzer, null, this);
     }
   }
 
@@ -49,13 +51,25 @@ public class TestBBCoreParserTerm extends TestCoreParser {
     return coreParser;
   }
 
+  @Override
+  protected Query parse(String xmlFileName) throws ParserException, IOException {
+    try (InputStream xmlStream = TestCoreParserTerm.class.getResourceAsStream(xmlFileName)) {
+      if (xmlStream == null) {
+        return super.parse(xmlFileName);
+      }
+      assertNotNull("Test XML file " + xmlFileName + " cannot be found", xmlStream);
+      Query result = coreParser().parse(xmlStream);
+      return result;
+    }
+  }
+
   public void testTermQueryStopwordXML() throws IOException {
-    parseShouldFail("BBTermQueryStopwords.xml",
+    parseShouldFail("TermQueryStopwords.xml",
         "Empty term found. field:contents value:to a. Check the query analyzer configured on this field.");
   }
   
   public void testTermQueryMultipleTermsXML() throws IOException {
-    parseShouldFail("BBTermQueryMultipleTerms.xml",
+    parseShouldFail("TermQueryMultipleTerms.xml",
         "Multiple terms found. field:contents value:sumitomo come home. Check the query analyzer configured on this field.");
   }
 
@@ -66,12 +80,12 @@ public class TestBBCoreParserTerm extends TestCoreParser {
   }
 
   public void testTermsQueryWithTermElementXML() throws ParserException, IOException {
-    Query q = parse("BBTermsQueryWithTermElement.xml");
+    Query q = parse("TermsQueryWithTermElement.xml");
     dumpResults("TermsQuery", q, 5);
   }
   
   public void testTermsQueryWithSingleTerm() throws ParserException, IOException {
-    Query q = parse("BBTermsQuerySingleTerm.xml");
+    Query q = parse("TermsQuerySingleTerm.xml");
     assertTrue("Expecting a TermQuery, but resulted in " + q.getClass(), q instanceof TermQuery);
     dumpResults("TermsQueryWithSingleTerm", q, 5);
   }
@@ -79,20 +93,20 @@ public class TestBBCoreParserTerm extends TestCoreParser {
   
   //term appears like single term but results in two terms when it runs through standard analyzer
   public void testTermsQueryWithStopwords() throws ParserException, IOException {
-    Query q = parse("BBTermsQueryStopwords.xml");
+    Query q = parse("TermsQueryStopwords.xml");
     if (analyzer() instanceof StandardAnalyzer)
       assertTrue("Expecting a BooleanQuery, but resulted in " + q.getClass(), q instanceof BooleanQuery);
     dumpResults("TermsQueryWithStopwords", q, 5);
     }
   
   public void testTermsQueryEmpty() throws ParserException, IOException {
-    Query q = parse("BBTermsQueryEmpty.xml");
+    Query q = parse("TermsQueryEmpty.xml");
     assertTrue("Expecting a MatchAllDocsQuery, but resulted in " + q.getClass(), q instanceof MatchAllDocsQuery);
     dumpResults("Empty TermsQuery", q, 5);
   }
   
   public void testTermsQueryWithOnlyStopwords() throws ParserException, IOException {
-    Query q = parse("BBTermsQueryOnlyStopwords.xml");
+    Query q = parse("TermsQueryOnlyStopwords.xml");
     if (analyzer() instanceof StandardAnalyzer)
       assertTrue("Expecting a MatchAllDocsQuery, but resulted in " + q.getClass(), q instanceof MatchAllDocsQuery);
     dumpResults("TermsQuery with only stopwords", q, 5);
@@ -105,17 +119,17 @@ public class TestBBCoreParserTerm extends TestCoreParser {
   }
   
   public void testTermsFilterWithSingleTerm() throws Exception {
-    Query q = parse("BBTermsFilterQueryWithSingleTerm.xml");
+    Query q = parse("TermsFilterQueryWithSingleTerm.xml");
     dumpResults("TermsFilter With SingleTerm", q, 5);
   }
   
   public void testTermsFilterQueryWithStopword() throws Exception {
-    Query q = parse("BBTermsFilterQueryStopwords.xml");
+    Query q = parse("TermsFilterQueryStopwords.xml");
     dumpResults("TermsFilter with Stopword", q, 5);
   }
   
   public void testTermsFilterQueryWithOnlyStopword() throws Exception {
-    Query q = parse("BBTermsFilterOnlyStopwords.xml");
+    Query q = parse("TermsFilterOnlyStopwords.xml");
     dumpResults("TermsFilter with all stop words", q, 5);
   }
 

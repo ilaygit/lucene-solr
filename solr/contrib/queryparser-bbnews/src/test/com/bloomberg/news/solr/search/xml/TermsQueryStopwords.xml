@@ -15,6 +15,5 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<!-- deprecated in favour of solr/contrib/queryparser-bbnews equivalent -->
-<!-- TermsQuery with only the stop words will effectively run down to an empty query and will produce a MatchAllDocument Query-->
-<TermsQuery fieldName="contents">and to a</TermsQuery>
+<!-- this look like a single term. But the Standard analyser would break this into two terms due to the presence of stop word (hyphen) in the middle-->
+<TermsQuery fieldName="contents">BFIM-SOVAC</TermsQuery>

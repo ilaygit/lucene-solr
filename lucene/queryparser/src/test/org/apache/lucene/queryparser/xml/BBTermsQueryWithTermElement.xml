@@ -15,4 +15,5 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
+<!-- deprecated in favour of solr/contrib/queryparser-bbnews equivalent -->
 <TermsQuery fieldName="contents"><Term>Basra</Term><Term>Japan</Term></TermsQuery>
