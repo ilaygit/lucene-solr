@@ -19,7 +19,7 @@ package org.apache.solr.search;
 import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.queryparser.xml.BBCoreParser;
+import org.apache.lucene.queryparser.xml.CoreParser;
 import org.apache.lucene.queryparser.xml.FilterBuilder;
 import org.apache.lucene.queryparser.xml.QueryBuilder;
 import org.apache.solr.common.util.NamedList;
@@ -29,9 +29,9 @@ import org.apache.solr.util.plugin.NamedListInitializedPlugin;
 
 /**
  * Assembles a QueryBuilder which uses Query objects from Solr's <code>search</code> module
- * in addition to Query objects supported by the Lucene <code>BBCoreParser</code>.
+ * in addition to Query objects supported by the Lucene <code>CoreParser</code>.
  */
-public class BBSolrCoreParser extends BBCoreParser implements NamedListInitializedPlugin {
+public class BBSolrCoreParser extends CoreParser implements NamedListInitializedPlugin {
 
   protected final SolrQueryRequest req;
 
