@@ -24,6 +24,7 @@ import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.MatchAllDocsFilter;
 import org.w3c.dom.Element;
 
+// Deprecated
 public class TestBBCoreParser extends TestCoreParser {
 
   private static String ANALYSER_PARAM     = "tests.TestParser.analyser";

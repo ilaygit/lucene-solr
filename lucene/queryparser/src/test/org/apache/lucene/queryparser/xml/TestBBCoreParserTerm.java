@@ -17,7 +17,9 @@ package org.apache.lucene.queryparser.xml;
  * limitations under the License.
  */
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.queryparser.xml.builders.TermFreqBuildersWrapper;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
@@ -25,7 +27,26 @@ import org.apache.lucene.search.TermQuery;
 
 import java.io.IOException;
 
-public class TestBBCoreParserTerm extends TestBBCoreParser {
+public class TestBBCoreParserTerm extends TestCoreParser {
+
+  private class CoreParserTerm extends CoreParser {
+    final private TermFreqBuildersWrapper tfBuildersWrapper;
+    CoreParserTerm(String defaultField, Analyzer analyzer) {
+      super(defaultField, analyzer);
+
+      // the builders to be tested
+      this.tfBuildersWrapper = new TermFreqBuildersWrapper(defaultField, analyzer, this);
+    }
+  }
+
+  @Override
+  protected CoreParser newCoreParser(String defaultField, Analyzer analyzer) {
+    final CoreParser coreParser = new CoreParserTerm(defaultField, analyzer);
+
+    // some additional builders (if any) to help
+
+    return coreParser;
+  }
 
   public void testTermQueryStopwordXML() throws IOException {
     parseShouldFail("BBTermQueryStopwords.xml",
